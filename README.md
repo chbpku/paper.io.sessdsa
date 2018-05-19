@@ -10,8 +10,11 @@
 ## 文件说明
 - README.md：本文件
 - LICENSE：授权文件GPL 3.0
-
+- sessdsa2018-paper.io.pdf：实习作业说明PPT
 
 ## 修改历史
+### 20180519
+- 陈斌创建了实习作业说明PPT。
+
 ### 20180518
 - 陈斌创建代码仓库和README.md文件。
