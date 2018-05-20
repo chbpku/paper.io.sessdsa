@@ -11,8 +11,12 @@
 - README.md：本文件
 - LICENSE：授权文件GPL 3.0
 - sessdsa2018-paper.io.pdf：实习作业说明PPT
+- match_core.py：游戏执行逻辑
 
 ## 修改历史
+### 20180519
+- 陈天翔上传了游戏执行逻辑
+
 ### 20180519
 - 陈斌创建了实习作业说明PPT。
 
