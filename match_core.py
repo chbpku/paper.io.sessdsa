@@ -24,7 +24,7 @@ AI函数应接收游戏数据与自身存储空间，返回'left'，'right'或No
 
 match_with_log函数同样进行比赛，但将结果通过shelve库输出为dat文件
 '''
-__all__ = ['match','match_with_log']
+__all__ = ['match', 'match_with_log']
 
 # 参数
 if 'global params':
@@ -36,12 +36,10 @@ if 'global params':
 
 # 游戏逻辑
 if 'game logics':
-    PLAYER_NUM = 2  # 玩家总数
-
     WIDTH, HEIGHT = None, None  # 游戏场地宽高
     BANDS = None  # 纸带判定区 = [[None] * HEIGHT for i in range(WIDTH)]
     FIELDS = None  # 已生成区域判定区 = [[None] * HEIGHT for i in range(WIDTH)]
-    PLAYERS = [None] * PLAYER_NUM
+    PLAYERS = [None] * 2
 
     class player:
         '''
@@ -109,12 +107,12 @@ if 'game logics':
                 return 2 - BANDS[self.x][self.y], 1, self.id - 1  # 纸带所有者负
 
             # 更新玩家碰撞
-            for i in range(PLAYER_NUM):
-                if PLAYERS[i].id != self.id and PLAYERS[i].x == self.x and PLAYERS[i].y == self.y:
-                    if PLAYERS[i].direction % 2 != self.direction % 2:  # 侧碰
-                        return self.id - 1, 2, PLAYERS[i].id
-                    else:  # 对撞
-                        return None, 3
+            enemy = PLAYERS[2 - self.id]
+            if enemy.x == self.x and enemy.y == self.y:
+                if enemy.direction % 2 != self.direction % 2:  # 侧碰
+                    return self.id - 1, 2, enemy.id
+                else:  # 对撞
+                    return None, 3
 
             # 场地更新
             if FIELDS[self.x][self.y] == self.id:  # 在/回到自己场地
@@ -202,8 +200,8 @@ if 'helpers':
 
         # 初始化计时
         global TURNS, TIMES
-        TURNS = [MAX_TURNS] * PLAYER_NUM
-        TIMES = [MAX_TIME] * PLAYER_NUM
+        TURNS = [MAX_TURNS] * 2
+        TIMES = [MAX_TIME] * 2
 
     def get_params(curr_plr=None):
         '''
@@ -230,7 +228,7 @@ if 'helpers':
                 （在curr_plr有效时）
                 me : 该玩家信息
                 enemy : 对手玩家信息
-                （在curr_plr有效时）
+                （在curr_plr无效时）
                 band_route : 双方纸带行进方向
         '''
         res = {}
@@ -340,8 +338,10 @@ def match(name1, func1, name2, func2, k=9, h=15):
     params:
         name1 - 玩家1名称 (str)
         func1 - 玩家1控制函数
-            接收纸片场地、纸带场地、玩家位置、玩家朝向
+            接收游戏数据字典
+            包含纸片场地、纸带场地、玩家位置、玩家朝向等参数
             返回操作符（left，right，None）
+            详见文件注释与get_params函数注释
         name2 - 玩家2名称
         func2 - 玩家2控制函数
         k - 场地半宽（奇数）
@@ -377,19 +377,21 @@ def match(name1, func1, name2, func2, k=9, h=15):
         'result': match_result
     }
 
-def match_with_log(*args,**kwargs):
+
+def match_with_log(*args, **kwargs):
     '''
-    将比赛结果记录为dat文件，使用shelve库读取
+    将比赛结果记录为文件，使用shelve库读取
     详见match函数注释
     '''
     # 进行比赛
-    one_match = match(*args,**kwargs)
+    one_match = match(*args, **kwargs)
 
     # 输出文件
-    log=shelve.open('%s-VS-%s.dat' % tuple(one_match['players']))
-    for k,v in one_match.items():
-        log[k]=v
+    log = shelve.open('%s-VS-%s' % tuple(one_match['players']))
+    for k, v in one_match.items():
+        log[k] = v
     log.close()
+
 
 if __name__ == '__main__':
     func_null = lambda params, storage: None
