@@ -1,17 +1,15 @@
 # match_core.py
 
-
-
 外部接口：
 - match(name1, func1, name2, func2, k=9, h=15)
 - match_with_log(name1, func1, name2, func2, k=9, h=15)
 
 用法：
-> from __match_core__ import __match__, __match_with_log__
-
+> from __match_core__ import __match__  
 > match_result = match('noob', noob_ai, 'master', master_ai, k=25, h=49) _# noob VS master in 50*49 field_
 > match_result['log'] _# each step including endgame_
 
+> from __match_core__ import __match_with_log__  
 > match_with_log('noob', noob_ai, 'master', master_ai, k=25, h=49) _# output to __'noob-VS-master'__ shelf_
 
 - ## match函数
