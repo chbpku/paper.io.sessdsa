@@ -10,7 +10,7 @@
 > match_result['log'] _# each step including endgame_
 
 > from __match_core__ import __match_with_log__  
-> match_with_log('noob', noob_ai, 'master', master_ai, k=25, h=49) _# output to __'noob-VS-master'__ shelf_
+> match_with_log('noob', noob_ai, 'master', master_ai, max_turn=5, max_time=1) _# output to __'noob-VS-master'__ shelf_
 
 - ## match函数
 
@@ -27,6 +27,8 @@
     - func2 - 玩家2控制函数
     - k - 场地半宽（奇数）
     - h - 场地高（奇数）
+    - max_turn - 总回合数（双方各行动一次为一回合）
+    - max_time - 总思考时间（秒）
 
     ### 返回值:
     - 字典，详见 __“对局记录”__ 部分
