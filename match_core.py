@@ -328,7 +328,7 @@ if 'helpers':
             for y in range(HEIGHT):
                 if FIELDS[x][y] is not None:
                     res[FIELDS[x][y] - 1] += 1
-        return res
+        return tuple(res)
 
 
 # 主函数
@@ -371,8 +371,8 @@ def match(name1, func1, name2, func2, k=9, h=15):
 
     # 生成对局记录对象
     return {
-        'players': [name1, name2],
-        'size': [WIDTH, HEIGHT],
+        'players': (name1, name2),
+        'size': (WIDTH, HEIGHT),
         'log': LOG_PUBLIC,
         'result': match_result
     }
