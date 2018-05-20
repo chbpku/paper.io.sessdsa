@@ -92,7 +92,7 @@ if 'helpers':
             return '由于玩家%s撞墙，玩家%s获得胜利' % (f, s)
 
         if rtype == 1:
-            if result[0] == result[2]:
+            if result[0] != result[2]:
                 return '由于玩家%s撞纸带自杀，玩家%s获得胜利' % (f, s)
             else:
                 return '玩家%s撞击对手纸带，获得胜利' % s
