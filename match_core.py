@@ -297,7 +297,7 @@ if 'helpers':
                     if op == 'L':
                         plr.turn_left()
                     elif op == 'R':
-                        plr.turn_right
+                        plr.turn_right()
                     else:  # 返回值不合法
                         return (2 - plr_index, -1, Exception(
                             '返回值%r非法' % action))
