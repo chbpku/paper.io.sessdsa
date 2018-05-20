@@ -368,7 +368,7 @@ def match(name1, func1, name2, func2, k=9, h=15, max_turn=50, max_time=5):
 
     # 运行比赛，并记录终局场景
     match_result = parse_match((func1, func2))
-    if match_result[1] > 0:
+    if match_result[1] >= 0:
         LOG_PUBLIC.append(get_params())
 
     # 如果平手则统计得分
