@@ -15,7 +15,7 @@
 - 可视化/visualize_console.py：控制台复盘代码
 
 ## 修改历史
-### 2-180521 00：45
+### 20180521 00：45
 - 4 fles uploaded:
 'chessboard.py', 'roundRobin.py', 'T_random_2.py' and 'T_random_3.py'
 'chessboard.py': some changes based on ‘match_core.py’. 
