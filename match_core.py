@@ -102,10 +102,6 @@ if 'game logics':
             self.field_border[2] = min(self.y, self.field_border[2])
             self.field_border[3] = max(self.y, self.field_border[3])
 
-            # 更新纸带碰撞
-            if BANDS[self.x][self.y] is not None:
-                return 2 - BANDS[self.x][self.y], 1, self.id - 1  # 纸带所有者负
-
             # 更新玩家碰撞
             enemy = PLAYERS[2 - self.id]
             if enemy.x == self.x and enemy.y == self.y:
@@ -113,6 +109,10 @@ if 'game logics':
                     return self.id - 1, 2, enemy.id
                 else:  # 对撞
                     return None, 3
+
+            # 更新纸带碰撞
+            if BANDS[self.x][self.y] is not None:
+                return 2 - BANDS[self.x][self.y], 1, self.id - 1  # 纸带所有者负
 
             # 场地更新
             if FIELDS[self.x][self.y] == self.id:  # 在/回到自己场地
