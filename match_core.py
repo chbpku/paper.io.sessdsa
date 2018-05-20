@@ -276,13 +276,13 @@ if 'helpers':
                     action = func(params, storage)
                     t2 = pf()
                 except Exception as e:  # AI函数报错
-                    return (2 - plr_index, -1, e)
+                    return (1 - plr_index, -1, e)
                 TURNS[plr_index] -= 1
 
                 # 判断是否超时
                 TIMES[plr_index] -= (t2 - t1)
                 if TIMES[plr_index] < 0:
-                    return (2 - plr_index, -2)
+                    return (1 - plr_index, -2)
 
                 # 根据操作符转向
                 if action:
@@ -292,7 +292,7 @@ if 'helpers':
                     elif op == 'R':
                         plr.turn_right()
                     else:  # 返回值不合法
-                        return (2 - plr_index, -1, Exception(
+                        return (1 - plr_index, -1, Exception(
                             '返回值%r非法' % action))
 
                 # 前进并更新结果，若终局则返回结果
