@@ -1,4 +1,5 @@
 from time import perf_counter as pf
+from random import randrange
 import pickle, os
 
 __doc__ = '''比赛逻辑
@@ -50,14 +51,19 @@ class player:
         id - 向players数组中添加位置
         x, y - 初始坐标
         expand - 初始纸片边长为(2 * expand + 1)
-        init_direction - 初始方向，默认为3向上
+        init_direction - 初始方向，默认为随机方向
     '''
     directions = [(1, 0), (0, 1), (-1, 0), (0, -1)]  # 方向数字对应前进方向
 
-    def __init__(self, id, x, y, expand=1, init_direction=3):
+    def __init__(self, id, x, y, expand=1, init_direction=None):
         self.id, self.x, self.y = id, x, y
         self.band_direction = []  # 记录纸带轨迹，便于状态转换时回溯
-        self.direction = init_direction
+
+        # 设置初始方向
+        if init_direction is None:
+            self.direction = randrange(4)
+        else:
+            self.direction = init_direction
 
         # 生成初始占有区域(l, r, u, d)
         self.field_border = [
@@ -193,8 +199,10 @@ if 'helpers':
         FIELDS = [[None] * HEIGHT for i in range(WIDTH)]
 
         # 初始化玩家
-        PLAYERS[0] = player(1, k // 2, h // 2)
-        PLAYERS[1] = player(2, k + k // 2, h // 2)
+        PLAYERS[0] = player(1, k // 2 + randrange(-3, 4),
+                            h // 2 + randrange(-3, 4))
+        PLAYERS[1] = player(2, k + k // 2 + randrange(-3, 4),
+                            h // 2 + randrange(-3, 4))
 
     def get_params(curr_plr=None):
         '''
