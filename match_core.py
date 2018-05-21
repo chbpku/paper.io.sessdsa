@@ -16,14 +16,14 @@ AI函数应接收游戏数据与自身存储空间，返回'left'，'right'或No
         x : 横坐标（场地数组下标1）
         y : 纵坐标（场地数组下标2）
         direction : 当前方向
-            0 : 向右
-            1 : 向下
-            2 : 向左
-            3 : 向上
+            0 : 向东
+            1 : 向南
+            2 : 向西
+            3 : 向北
     me : 该玩家信息
     enemy : 对手玩家信息
 
-match_with_log函数同样进行比赛，但将结果通过shelve库输出为dat文件
+match_with_log函数同样进行比赛，但将结果通过pickles库输出为pkl文件
 '''
 __all__ = ['match', 'match_with_log']
 
