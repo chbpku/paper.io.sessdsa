@@ -3,7 +3,7 @@ __doc__ = '''循环赛脚本
 读取同级目录内所有AI文件，提取play函数并执行
 '''
 
-import time, os
+import time, os, sys
 from match_core import match_with_log
 
 
@@ -56,13 +56,14 @@ def end_text(names, result):
 
 
 players = []
-#读取AI文件夹下所有算法文件名
+#读取AI文件夹下所有算法
+sys.path.append(os.path.abspath('AI'))  # 将AI文件夹加入环境路径
 for file in os.listdir('AI'):
     if file.endswith('.py'):
         # 提取play函数
         try:
             name = file[:-3]
-            exec('import AI.%s as ai' % name)
+            exec('import %s as ai' % name)
             players.append((name, ai.play))
 
         # 读取时出错
@@ -72,7 +73,7 @@ for file in os.listdir('AI'):
 # 开始循环赛
 for name1, func1 in players:
     for name2, func2 in players:
-        match_result = match_with_log(name1, func1, name2, func2, k=25, h=49)
+        match_result = match_with_log(name1, func1, name2, func2, k=5, h=9)
 
         print('%s VS %s' % tuple(match_result['players']))
         print(end_text(match_result['players'], match_result['result']))
