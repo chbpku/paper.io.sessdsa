@@ -291,9 +291,6 @@ if 'helpers':
                         plr.turn_left()
                     elif op == 'R':
                         plr.turn_right()
-                    else:  # 返回值不合法
-                        return (1 - plr_index, -1, Exception(
-                            '返回值%r非法' % action))
 
                 # 前进并更新结果，若终局则返回结果
                 res = plr.forward()
@@ -400,6 +397,64 @@ def match_with_log(*args, **kwargs):
 
 
 if __name__ == '__main__':
-    func_null = lambda params, storage: None
-    func_null2 = lambda params, storage: 'left'
-    match_with_log('straight', func_null, 'round', func_null2)
+    # floodfill压力测试
+    from random import *
+    from time import perf_counter as pf
+
+    k=1001
+    h=2001
+
+    # 初始化对局场地
+    WIDTH = k * 2
+    HEIGHT = h
+    init_field(k, h)
+
+    # 随机色块
+    for x in range(WIDTH):
+        for y in range(HEIGHT):
+            if randrange(2)==1:
+                FIELDS[x][y]=1
+    print('generate done')
+    print(count_score())
+    for y in range(20):
+        res=''
+        for x in range(150):
+            res+='+' if FIELDS[x][y]==1 else ' '
+        print(res)
+    
+    t1=pf()
+    targets = set((x, y) for x in range(WIDTH) for y in range(HEIGHT)
+                    if FIELDS[x][y] != 1)
+    while targets:
+        iter = [targets.pop()]
+        fill_pool = []
+        in_bound = True
+        while iter:
+            curr = iter.pop()
+            # floodfill
+            for dx, dy in player.directions:
+                next_step = (curr[0] + dx, curr[1] + dy)
+                if next_step in targets:
+                    targets.remove(next_step)
+                    iter.append(next_step)
+
+            # 判断当前点
+            if in_bound:
+                if curr[0] == 0 or curr[0] == WIDTH-1 or curr[1] == 0 or curr[1] == HEIGHT-1:
+                    in_bound = False
+                else:
+                    fill_pool.append(curr)
+
+        # 若未出界则填充内容
+        if in_bound:
+            for x, y in fill_pool:
+                FIELDS[x][y] = 1
+    
+    t2=pf()
+    print(t2-t1)
+    print(count_score())
+    for y in range(20):
+        res=''
+        for x in range(150):
+            res+='+' if FIELDS[x][y]==1 else ' '
+        print(res)
