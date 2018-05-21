@@ -11,10 +11,11 @@
 - README.md：本文件
 - LICENSE：授权文件GPL 3.0
 - sessdsa2018-paper.io.pdf：实习作业说明PPT
-- match_core.py：游戏执行逻辑
-- visualize_console.py：控制台复盘代码
+- match_core.py：游戏执行逻辑（配套说明md文件）
+- visualize_console.py：控制台复盘代码（配套说明md文件）
 - roundRobin.py：循环赛代码
-- AI/AI_dumb_random.py：随机游走AI
+- [AI]：一些示例AI
+- AI_Template.py：AI编写模板（配套说明docx文件）
 
 ## 修改历史
 
@@ -22,6 +23,7 @@
 - 陈天翔上传了控制台复盘代码，修改了执行逻辑使之支持可变回合数/思考时间，并上传了示例随机游走AI
 - 陈天翔更改复盘文件格式（由shelve对象改为pkl格式）与输出路径（保存至log文件夹）
 - 张赖和创建了循环赛代码，并上传了另外4个示例AI
+- 陈天翔创建了AI模板与配套的说明文件
 
 ### 20180520
 - 陈天翔上传了游戏执行逻辑
