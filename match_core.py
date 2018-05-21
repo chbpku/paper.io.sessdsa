@@ -378,6 +378,8 @@ def match(name1, func1, name2, func2, k=9, h=15, max_turn=50, max_time=5):
     return {
         'players': (name1, name2),
         'size': (WIDTH, HEIGHT),
+        'maxturn': MAX_TURNS,
+        'maxtime': MAX_TIME,
         'log': LOG_PUBLIC,
         'result': match_result
     }
@@ -407,7 +409,7 @@ def match_with_log(*args, **kwargs):
     one_match = match(*args, **kwargs)
 
     # 输出文件
-    os.makedirs('log',exist_ok=True)
+    os.makedirs('log', exist_ok=True)
     with open('log/%s-VS-%s.pkl' % tuple(one_match['players']), 'wb') as file:
         pickle.dump(one_match, file)
 
