@@ -24,7 +24,10 @@ if 'helpers':
         for y in range(h):
             for x in range(w):
                 if slice['bands'][x][y] is not None:
-                    buffer[x, y] = ' %s ' % slice['bands'][x][y]
+                    if slice['fields'][x][y] is not None:
+                        buffer[x, y] = '+%s+' % slice['bands'][x][y]
+                    else:
+                        buffer[x, y] = ' %s ' % slice['bands'][x][y]
                 elif slice['fields'][x][y] is not None:
                     buffer[x, y] = '-%s-' % slice['fields'][x][y]
 
@@ -84,6 +87,7 @@ if 'helpers':
             1 - 纸带碰撞
             2 - 侧碰
             3 - 正碰，结算得分
+            4 - 领地内互相碰撞
             -1 - AI函数报错
             -2 - 超时
             -3 - 回合数耗尽，结算得分
@@ -109,6 +113,11 @@ if 'helpers':
 
         if rtype == 2:
             return '玩家%s侧面撞击对手，获得胜利' % s
+
+        if rtype == 4:
+            if result[2]:
+                return '玩家%s在领地内撞击对手，获得胜利' % s
+            return '玩家%s在领地内被对手撞击，获得胜利' % s
 
         if rtype == -1:
             return '由于玩家%s函数报错(%s)，\n玩家%s获得胜利' % (f, result[2], s)
