@@ -12,7 +12,8 @@
 - LICENSE：授权文件GPL 3.0
 - sessdsa2018-paper.io.pdf：实习作业说明PPT
 - match_core.py：游戏执行逻辑
-- 可视化/visualize_console.py：控制台复盘代码
+- visualize_console.py：控制台复盘代码
+- AI/AI_dumb_random.py：随机游走AI
 
 ## 修改历史
 ### 20180521 00：45
