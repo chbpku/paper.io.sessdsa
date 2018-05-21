@@ -57,7 +57,7 @@ if 'helpers':
         '''
         # 初始信息
         if index == 0:
-            res = '初始场景，先手玩家%s面朝%s；后手玩家%s面朝%s.' % (\
+            return '初始场景，先手玩家%s面朝%s；后手玩家%s面朝%s.' % (\
                 names[0], \
                 '东南西北' [slice['players'][0]['direction']], \
                 names[1], \
