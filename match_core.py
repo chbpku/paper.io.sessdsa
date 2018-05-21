@@ -30,8 +30,8 @@ __all__ = ['match', 'match_with_log']
 # 参数
 if 'global params':
     # 待初始化时间参数
-    MAX_TURNS = 50  # 最大回合数（双方各操作一次为一回合）
-    MAX_TIME = 5  # 总思考时间（秒）
+    MAX_TURNS = None  # 最大回合数（双方各操作一次为一回合）
+    MAX_TIME = None  # 总思考时间（秒）
     TURNS = None  # 记录每个玩家剩余回合数
     TIMES = None  # 记录每个玩家剩余思考时间
 
@@ -93,6 +93,7 @@ class player:
             若到达终盘 - 
                 胜利玩家ID（1或2，None代表同时死亡）
                 终局原因编号（详见parse_match函数注释）
+                额外内容
         '''
         # 移动
         next_step = self.directions[self.direction]
@@ -112,60 +113,95 @@ class player:
         # 更新玩家碰撞
         enemy = PLAYERS[2 - self.id]
         if enemy.x == self.x and enemy.y == self.y:
-            if enemy.direction % 2 != self.direction % 2:  # 侧碰
-                return self.id - 1, 2, enemy.id
-            else:  # 对撞
-                return None, 3
+            # 自己领地内击杀对手
+            if FIELDS[self.x][self.y] == self.id:  # 自己领地
+                self.check_field_fill()
+                return self.id - 1, 4, True
+
+            # 以下情况先更新纸带
+            self.extend_band()
+
+            # 对手领地内送分
+            if FIELDS[self.x][self.y] == enemy.id:
+                return enemy.id - 1, 4, False
+
+            # 侧碰击杀对手
+            if enemy.direction % 2 != self.direction % 2:
+                return self.id - 1, 2
+
+            # 对撞统计数据
+            return None, 3
 
         # 更新纸带碰撞
         if BANDS[self.x][self.y] is not None:
-            return 2 - BANDS[self.x][self.y], 1, self.id - 1  # 纸带所有者负
+            # 缓存记录胜者为纸带主人的对手
+            winner = 2 - BANDS[self.x][self.y]
 
-        # 场地更新
+            # 更新场地并返回比赛结果
+            self.update_field()
+            return winner, 1, self.id - 1
+
+        # 更新场地
+        self.update_field()
+
+    def update_field(self):
+        '''更新玩家在场地引起的效应'''
+        # 场地内检查填充情况
         if FIELDS[self.x][self.y] == self.id:  # 在/回到自己场地
-            if self.band_direction:
-                # 1. 纸带转换为领地
-                ptrx, ptry = self.x - next_step[0], self.y - next_step[1]  # 从上一步纸带位置回溯
-                while self.band_direction:
-                    BANDS[ptrx][ptry] = None
-                    FIELDS[ptrx][ptry] = self.id
-                    next_step = self.directions[self.band_direction.pop()]
-                    ptrx -= next_step[0]
-                    ptry -= next_step[1]
+            if self.band_direction:  # 在回领地瞬间填充领地
+                self.check_field_fill()
 
-                # 2. floodfill填充空腔
-                targets = set((x, y) for x in range(self.field_border[
-                    0], self.field_border[1] + 1) for y in range(
-                        self.field_border[2], self.field_border[3] + 1)
-                              if FIELDS[x][y] != self.id)
-                while targets:
-                    iter = [targets.pop()]
-                    fill_pool = []
-                    in_bound = True  # 这次填充是否为界内填充
-                    while iter:
-                        curr = iter.pop()
-                        # floodfill
-                        for dx, dy in self.directions:
-                            next_step = (curr[0] + dx, curr[1] + dy)
-                            if next_step in targets:
-                                targets.remove(next_step)
-                                iter.append(next_step)
+        # 场地外延伸纸带
+        else:
+            self.extend_band()
 
-                        # 判断当前点
-                        if in_bound:
-                            if curr[0] == self.field_border[0] or curr[0] == self.field_border[1] or curr[1] == self.field_border[2] or curr[1] == self.field_border[3]:
-                                in_bound = False
-                            else:
-                                fill_pool.append(curr)
+    def extend_band(self):
+        '''（在自己领地外）延伸纸带'''
+        self.band_direction.append(self.direction)
+        BANDS[self.x][self.y] = self.id
 
-                    # 若未出界则填充内容
-                    if in_bound:
-                        for x, y in fill_pool:
-                            FIELDS[x][y] = self.id
+    def check_field_fill(self):
+        '''（返回自己领地时）检查填充'''
+        # 1. 纸带转换为领地
+        next_step = self.directions[self.direction]
+        ptrx, ptry = self.x - next_step[0], self.y - next_step[1]  # 从上一步纸带位置回溯
+        while self.band_direction:
+            BANDS[ptrx][ptry] = None
+            FIELDS[ptrx][ptry] = self.id
+            next_step = self.directions[self.band_direction.pop()]
+            ptrx -= next_step[0]
+            ptry -= next_step[1]
 
-        else:  # 出场地
-            self.band_direction.append(self.direction)
-            BANDS[self.x][self.y] = self.id
+        # 2. floodfill填充空腔
+        targets = set(
+            (x, y)
+            for x in range(self.field_border[0], self.field_border[1] + 1)
+            for y in range(self.field_border[2], self.field_border[3] + 1)
+            if FIELDS[x][y] != self.id)
+        while targets:
+            iter = [targets.pop()]
+            fill_pool = []
+            in_bound = True  # 这次填充是否为界内填充
+            while iter:
+                curr = iter.pop()
+                # floodfill
+                for dx, dy in self.directions:
+                    next_step = (curr[0] + dx, curr[1] + dy)
+                    if next_step in targets:
+                        targets.remove(next_step)
+                        iter.append(next_step)
+
+                # 判断当前点
+                if in_bound:
+                    if curr[0] == self.field_border[0] or curr[0] == self.field_border[1] or curr[1] == self.field_border[2] or curr[1] == self.field_border[3]:
+                        in_bound = False
+                    else:
+                        fill_pool.append(curr)
+
+            # 若未出界则填充内容
+            if in_bound:
+                for x, y in fill_pool:
+                    FIELDS[x][y] = self.id
 
     def get_info(self):
         '''
@@ -260,6 +296,7 @@ if 'helpers':
                 1 - 纸带碰撞
                 2 - 侧碰
                 3 - 正碰，结算得分
+                4 - 领地内互相碰撞
                 -1 - AI函数报错
                 -2 - 超时
                 -3 - 回合数耗尽，结算得分
@@ -430,8 +467,8 @@ if __name__ == '__main__':
     from random import *
     from time import perf_counter as pf
 
-    k = 1001
-    h = 2001
+    k = 301
+    h = 101
 
     # 初始化对局场地
     WIDTH = k * 2
@@ -451,35 +488,12 @@ if __name__ == '__main__':
             res += '+' if FIELDS[x][y] == 1 else ' '
         print(res)
 
+    PLAYERS[0].field_border = [0, WIDTH - 1, 0, HEIGHT - 1]
+
     t1 = pf()
-    targets = set((x, y) for x in range(WIDTH) for y in range(HEIGHT)
-                  if FIELDS[x][y] != 1)
-    while targets:
-        iter = [targets.pop()]
-        fill_pool = []
-        in_bound = True
-        while iter:
-            curr = iter.pop()
-            # floodfill
-            for dx, dy in player.directions:
-                next_step = (curr[0] + dx, curr[1] + dy)
-                if next_step in targets:
-                    targets.remove(next_step)
-                    iter.append(next_step)
-
-            # 判断当前点
-            if in_bound:
-                if curr[0] == 0 or curr[0] == WIDTH - 1 or curr[1] == 0 or curr[1] == HEIGHT - 1:
-                    in_bound = False
-                else:
-                    fill_pool.append(curr)
-
-        # 若未出界则填充内容
-        if in_bound:
-            for x, y in fill_pool:
-                FIELDS[x][y] = 1
-
+    PLAYERS[0].check_field_fill()
     t2 = pf()
+
     print(t2 - t1)
     print(count_score())
     for y in range(20):
