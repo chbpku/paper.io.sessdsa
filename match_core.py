@@ -285,7 +285,7 @@ if 'helpers':
                     return (1 - plr_index, -2)
 
                 # 根据操作符转向
-                if action:
+                if isinstance(action, str) and len(action) > 0:
                     op = action[0].upper()
                     if op == 'L':
                         plr.turn_left()
