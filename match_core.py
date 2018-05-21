@@ -1,5 +1,5 @@
 from time import perf_counter as pf
-import pickle
+import pickle, os
 
 __doc__ = '''比赛逻辑
 
@@ -259,7 +259,7 @@ if 'helpers':
         t1, t2, action = 0, 0, None  # 在字典提前初始化计时变量、存放操作结果变量，去除新建变量耗时因素
 
         # 建立双方存储空间
-        storages = [{'log': []} for i in range(2)]
+        storages = [{'size': (WIDTH, HEIGHT), 'log': []} for i in range(2)]
 
         # 执行游戏逻辑
         for i in range(MAX_TURNS):
@@ -386,14 +386,33 @@ def match(name1, func1, name2, func2, k=9, h=15, max_turn=50, max_time=5):
 def match_with_log(*args, **kwargs):
     '''
     使用pickle库将比赛结果记录为文件
+
+    params:
+        name1 - 玩家1名称 (str)
+        func1 - 玩家1控制函数
+            接收游戏数据字典
+            包含纸片场地、纸带场地、玩家位置、玩家朝向等参数
+            返回操作符（left，right，None）
+            详见文件注释与get_params函数注释
+        name2 - 玩家2名称
+        func2 - 玩家2控制函数
+        k - 场地半宽（奇数）
+        h - 场地高（奇数）
+        max_turn - 总回合数（双方各行动一次为一回合）
+        max_time - 总思考时间（秒）
+
     详见match函数注释
     '''
     # 进行比赛
     one_match = match(*args, **kwargs)
 
     # 输出文件
-    with open('%s-VS-%s.pkl' % tuple(one_match['players']), 'wb') as file:
+    os.makedirs('log',exist_ok=True)
+    with open('log/%s-VS-%s.pkl' % tuple(one_match['players']), 'wb') as file:
         pickle.dump(one_match, file)
+
+    # 返回比赛记录
+    return one_match
 
 
 if __name__ == '__main__':
@@ -401,8 +420,8 @@ if __name__ == '__main__':
     from random import *
     from time import perf_counter as pf
 
-    k=1001
-    h=2001
+    k = 1001
+    h = 2001
 
     # 初始化对局场地
     WIDTH = k * 2
@@ -412,19 +431,19 @@ if __name__ == '__main__':
     # 随机色块
     for x in range(WIDTH):
         for y in range(HEIGHT):
-            if randrange(2)==1:
-                FIELDS[x][y]=1
+            if randrange(2) == 1:
+                FIELDS[x][y] = 1
     print('generate done')
     print(count_score())
     for y in range(20):
-        res=''
+        res = ''
         for x in range(150):
-            res+='+' if FIELDS[x][y]==1 else ' '
+            res += '+' if FIELDS[x][y] == 1 else ' '
         print(res)
-    
-    t1=pf()
+
+    t1 = pf()
     targets = set((x, y) for x in range(WIDTH) for y in range(HEIGHT)
-                    if FIELDS[x][y] != 1)
+                  if FIELDS[x][y] != 1)
     while targets:
         iter = [targets.pop()]
         fill_pool = []
@@ -440,7 +459,7 @@ if __name__ == '__main__':
 
             # 判断当前点
             if in_bound:
-                if curr[0] == 0 or curr[0] == WIDTH-1 or curr[1] == 0 or curr[1] == HEIGHT-1:
+                if curr[0] == 0 or curr[0] == WIDTH - 1 or curr[1] == 0 or curr[1] == HEIGHT - 1:
                     in_bound = False
                 else:
                     fill_pool.append(curr)
@@ -449,12 +468,12 @@ if __name__ == '__main__':
         if in_bound:
             for x, y in fill_pool:
                 FIELDS[x][y] = 1
-    
-    t2=pf()
-    print(t2-t1)
+
+    t2 = pf()
+    print(t2 - t1)
     print(count_score())
     for y in range(20):
-        res=''
+        res = ''
         for x in range(150):
-            res+='+' if FIELDS[x][y]==1 else ' '
+            res += '+' if FIELDS[x][y] == 1 else ' '
         print(res)
