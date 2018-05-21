@@ -92,7 +92,7 @@ class player:
             若未到达终盘条件 - None
             若到达终盘 - 
                 胜利玩家ID（1或2，None代表同时死亡）
-                终局原因编号（详见end_game函数注释）
+                终局原因编号（详见parse_match函数注释）
         '''
         # 移动
         next_step = self.directions[self.direction]
