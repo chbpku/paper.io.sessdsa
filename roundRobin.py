@@ -1,99 +1,79 @@
-# -*- coding: utf-8 -*-
-import time
-from chessboard import *
+__doc__ = '''循环赛脚本
 
-timeout= 1.0 # singlestep timeout
+读取同级目录内所有AI文件，提取play函数并执行
+'''
 
-def race(blackName, blackPlay, whiteName, whitePlay):
+import time, os
+from match_core import match_with_log
+
+
+# 输出比赛结果
+def end_text(names, result):
+    '''
+    对局总结
+
+    终局原因:
+        0 - 撞墙
+        1 - 纸带碰撞
+        2 - 侧碰
+        3 - 正碰，结算得分
+        -1 - AI函数报错
+        -2 - 超时
+        -3 - 回合数耗尽，结算得分
+
+    params:
+        names - 玩家名称
+        result - 对局结果
     
-    mainBoard = ChessBoard()
-    blackStorage = {'log':[]}
-    whiteStorage = {'log':[]}
-    TIMEOUT = False
-    
-    #开始下棋
-    while not TIMEOUT:
-        bLogEntry = LogEntry()
-        wLogEntry = LogEntry()
-        bLogEntry.prevBoard = ChessBoard(mainBoard)
-        wLogEntry.prevBoard = ChessBoard(mainBoard)
-        bLogEntry.turn = B
-        wLogEntry.turn = B
-        t1 = time.clock()
-        nextTurn = blackPlay(ChessBoard(mainBoard), blackStorage)
-        timeCost = time.clock()- t1
-        bLogEntry.timeCost = timeCost
-        wLogEntry.timeCost = timeCost
-        mainBoard.timeCost[0] += timeCost
-        result = mainBoard.makeTurn(nextTurn)
-        bLogEntry.turnPos = nextTurn
-        wLogEntry.turnPos = nextTurn
-        bLogEntry.postBoard = ChessBoard(mainBoard)
-        wLogEntry.postBoard = ChessBoard(mainBoard)
-        blackStorage['log'].append(bLogEntry)
-        whiteStorage['log'].append(wLogEntry)
+    returns:
+        字符串
+    '''
+    rtype = result[1]
+    f, s = names if result[0] else names[::-1]  # 失败+成功顺序玩家名称
 
-        if len(match_result) == 3: # gameset
-            continue
-        
-        TIMEOUT = (timeCost> timeout)
-        if TIMEOUT: #单步超过时限，终止判输
-            continue
+    if rtype == 0:
+        return '由于玩家%s撞墙，玩家%s获得胜利' % (f, s)
 
-        bLogEntry = LogEntry()
-        wLogEntry = LogEntry()
-        bLogEntry.prevBoard = ChessBoard(mainBoard)
-        wLogEntry.prevBoard = ChessBoard(mainBoard)
-        bLogEntry.turn= W
-        wLogEntry.turn= W
-        t1 = time.clock()
-        nextTurn = blackPlay(ChessBoard(mainBoard), blackStorage)
-        timeCost = time.clock()- t1
-        bLogEntry.timeCost = timeCost
-        wLogEntry.timeCost = timeCost
-        mainBoard.timeCost[0] += timeCost
-        result = mainBoard.makeTurn(nextTurn)
-        bLogEntry.turnPos = nextTurn
-        wLogEntry.turnPos = nextTurn
-        bLogEntry.postBoard = ChessBoard(mainBoard)
-        wLogEntry.postBoard = ChessBoard(mainBoard)
-        blackStorage['log'].append(bLogEntry)
-        whiteStorage['log'].append(wLogEntry)
-        
-        if len(match_result) == 3: # gameset
-            continue
+    if rtype == 1:
+        if result[0] != result[2]:
+            return '由于玩家%s撞纸带自杀，玩家%s获得胜利' % (f, s)
+        else:
+            return '玩家%s撞击对手纸带，获得胜利' % s
 
-        TIMEOUT= timeCost> timeout
-        if TIMEOUT: #单步超过时限，终止判输
-            continue
+    if rtype == 2:
+        return '玩家%s侧面撞击对手，获得胜利' % s
 
-    #终局统计，保存复盘资料
-    import shelve
-    d= shelve.open('%s-VS-%s.dat' % (blackName, whiteName))
-    d['Black']= blackName
-    d['White']= whiteName
-    d['Score']= mainBoard.getScore()
-    d['TimeCost']= mainBoard.getTimeCost()
-    d['LastTurn']= mainBoard.getTurn()
-    d['TIMEOUT']= TIMEOUT
-    d['Final']= mainBoard
-    d['log']= blackStorage['log']
-    d.close()
+    if rtype == -1:
+        return '由于玩家%s函数报错(%s)，\n玩家%s获得胜利' % (f, result[2], s)
 
-    print('%s-VS-%s\nKO:%s TIMEOUT:%s' % (blackName, whiteName, KO, TIMEOUT))
-    print(mainBoard)
-    print('============')
+    if rtype == -2:
+        return '由于玩家%s决策时间耗尽，玩家%s获得胜利' % (f, s)
 
-import os
-players= []
-#取得所有以T_开始文件名的算法文件名
-for root, dirs, files in os.walk('.'):
-    for name in files:
-        if name[:2]== 'T_' and name[-3:]== '.py': #以T_开始，以.py结尾
-            players.append(name[:-3]) #去掉.py后缀
+    pre = '玩家正碰' if rtype == 3 else '回合数耗尽'
+    scores = (('%s: %d' % pair) for pair in zip(names, result[2]))
+    res = '平局' if result[0] is None else ('玩家%s获胜' % s)
+    return '%s，双方得分分别为：%s\n%s' % (pre, '; '.join(scores), res)
 
-for blackName in players:
-    for whiteName in players:
-        exec('import %s as BP' % (blackName))
-        exec('import %s as WP' % (whiteName))
-        race(blackName, BP.play, whiteName, WP.play)
+
+players = []
+#读取AI文件夹下所有算法文件名
+for file in os.listdir('AI'):
+    if file.endswith('.py'):
+        # 提取play函数
+        try:
+            name = file[:-3]
+            exec('import AI.%s as ai' % name)
+            players.append((name, ai.play))
+
+        # 读取时出错
+        except Exception as e:
+            print('读取%r时出错：%s' % (file, e))
+
+# 开始循环赛
+for name1, func1 in players:
+    for name2, func2 in players:
+        match_result = match_with_log(name1, func1, name2, func2, k=25, h=49)
+
+        print('%s VS %s' % tuple(match_result['players']))
+        print(end_text(match_result['players'], match_result['result']))
+        print('=' * 30)
