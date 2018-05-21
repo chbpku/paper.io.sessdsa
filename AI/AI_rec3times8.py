@@ -1,17 +1,15 @@
 # -*- coding: utf-8 -*-
-from match_core import *
-import random
+
 
 # cb为棋盘
 # ms为函数可以利用的存储字典，其中ms['log']是下棋历史
-
-stepp = 0
 def play(cb, ms):
-    global stepp
-    stepp = stepp+1
-    
-    turnList = ['L', 'S'] # 只会左转或直走
-    if stepp%11==3 or stepp%11==0:
+    import random
+
+    ms['step'] = ms.get('step', 0) + 1
+
+    turnList = 'LS'  # 只会左转或直走
+    if ms['step'] % 11 == 3 or ms['step'] % 11 == 0:
         return turnList[0]
     else:
         return turnList[1]
