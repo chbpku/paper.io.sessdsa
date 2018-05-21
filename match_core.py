@@ -369,7 +369,7 @@ def match(name1, func1, name2, func2, k=9, h=15, max_turn=50, max_time=5):
 
     # 建立空log列表
     global LOG_PUBLIC
-    LOG_PUBLIC = []
+    LOG_PUBLIC = [get_params()]
 
     # 运行比赛，并记录终局场景
     match_result = parse_match((func1, func2))

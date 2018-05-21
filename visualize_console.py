@@ -55,13 +55,22 @@ if 'helpers':
         returns:
             一行字符串
         '''
+        # 初始信息
+        if index == 0:
+            res = '初始场景，先手玩家%s面朝%s；后手玩家%s面朝%s.' % (\
+                names[0], \
+                '东南西北' [slice['players'][0]['direction']], \
+                names[1], \
+                '东南西北' [slice['players'][1]['direction']] \
+            )
+
         # 步数
-        res = 'Step %d of %d: ' % (index + 1, total)
+        res = 'Step %d of %d: ' % (index, total)
 
         # 玩家信息
-        plr_ind = index % 2
+        plr_ind = index % 2 == 0
         plr_name = names[plr_ind]
-        plr_movement = '右下左上' [slice['players'][plr_ind]['direction']]
+        plr_movement = '东南西北' [slice['players'][plr_ind]['direction']]
 
         # 合成
         return res + '玩家%s向%s移动.' % (plr_name, plr_movement)
@@ -134,14 +143,14 @@ def open_log(log, stream=sys.stdout):
     # 输出比赛基本信息
     names = log['players']
     size = log['size']
-    total = len(log['log'])
+    total = len(log['log']) - 1
     print_r('%s VS %s' % names)
     print_r('场地大小为%dx%d，最大%d回合，双方最大思考时间%s秒' % (*size, log['maxturn'],
                                                log['maxtime']))
     print_r('对局共%d步:' % total)
 
     # 输出比赛过程
-    for slice, index in zip(log['log'], range(len(log['log']))):
+    for slice, index in zip(log['log'], range(total + 1)):
         print_r(step_text(names, slice, index, total))
         print_r(print_frame(slice, *size))
 
