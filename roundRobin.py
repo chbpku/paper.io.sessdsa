@@ -4,7 +4,7 @@ __doc__ = '''循环赛脚本
 '''
 
 import time, os, sys
-from match_core import match_with_log
+from match_core import match, match_with_log
 
 
 # 输出比赛结果
@@ -70,11 +70,38 @@ for file in os.listdir('AI'):
         except Exception as e:
             print('读取%r时出错：%s' % (file, e))
 
+# 统计
+wins = {plr[0]: 0 for plr in players}
+loses = {plr[0]: 0 for plr in players}
+duels = {plr[0]: 0 for plr in players}
+
+
+def stat_(res):
+    players = res['players']
+    winner = res['result'][0]
+    if winner is not None:
+        wins[players[winner]] += 1
+        loses[players[1 - winner]] += 1
+
+    else:
+        for plr in players:
+            duels[plr] += 1
+
+    return res
+
+
 # 开始循环赛
 for name1, func1 in players:
     for name2, func2 in players:
-        match_result = match_with_log(name1, func1, name2, func2, k=5, h=9)
+        for i in range(9):
+            stat_(match(name1, func1, name2, func2, k=15, h=29))
+        stat_(match_with_log(name1, func1, name2, func2, k=15, h=29))
 
-        print('%s VS %s' % tuple(match_result['players']))
-        print(end_text(match_result['players'], match_result['result']))
-        print('=' * 30)
+# 输出统计结果
+for plr in wins:
+    print('%s：%d胜 %d负 %d平' % ( \
+        plr, \
+        wins[plr], \
+        loses[plr], \
+        duels[plr]
+    ))
