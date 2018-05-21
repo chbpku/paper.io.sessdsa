@@ -1,4 +1,5 @@
 import shelve
+import pickle
 __all__ = ['open_log']
 
 # 辅助函数
@@ -121,8 +122,9 @@ def open_log(log):
             1. 记录文件名（shelve包生成的3文件，不包含后缀名）
             2. 原始对局记录字典
     '''
-    if isinstance(log,str):
-        log = shelve.open(log)
+    if isinstance(log, str):
+        with open(log, 'rb') as file:
+            log = pickle.load(file)
     names = log['players']
     size = log['size']
     total = len(log['log'])
@@ -136,4 +138,4 @@ def open_log(log):
 
 
 if __name__ == '__main__':
-    open_log('straight-VS-round')
+    open_log('straight-VS-round.pkl')

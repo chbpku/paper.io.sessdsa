@@ -1,5 +1,5 @@
 from time import perf_counter as pf
-import shelve
+import pickle
 
 __doc__ = '''比赛逻辑
 
@@ -388,17 +388,15 @@ def match(name1, func1, name2, func2, k=9, h=15, max_turn=50, max_time=5):
 
 def match_with_log(*args, **kwargs):
     '''
-    将比赛结果记录为文件，使用shelve库读取
+    使用pickle库将比赛结果记录为文件
     详见match函数注释
     '''
     # 进行比赛
     one_match = match(*args, **kwargs)
 
     # 输出文件
-    log = shelve.open('%s-VS-%s' % tuple(one_match['players']))
-    for k, v in one_match.items():
-        log[k] = v
-    log.close()
+    with open('%s-VS-%s.pkl' % tuple(one_match['players']), 'wb') as file:
+        pickle.dump(one_match, file)
 
 
 if __name__ == '__main__':
