@@ -17,6 +17,7 @@ def end_text(names, result):
         1 - 纸带碰撞
         2 - 侧碰
         3 - 正碰，结算得分
+        4 - 领地内互相碰撞
         -1 - AI函数报错
         -2 - 超时
         -3 - 回合数耗尽，结算得分
@@ -42,6 +43,11 @@ def end_text(names, result):
 
     if rtype == 2:
         return '玩家%s侧面撞击对手，获得胜利' % s
+
+    if rtype == 4:
+        if result[2]:
+            return '玩家%s在领地内撞击对手，获得胜利' % s
+        return '玩家%s在领地内被对手撞击，获得胜利' % s
 
     if rtype == -1:
         return '由于玩家%s函数报错(%s)，\n玩家%s获得胜利' % (f, result[2], s)
@@ -77,6 +83,7 @@ duels = {plr[0]: 0 for plr in players}
 
 
 def stat_(res):
+    '''读取比赛结果并统计胜负'''
     players = res['players']
     winner = res['result'][0]
     if winner is not None:
@@ -93,8 +100,15 @@ def stat_(res):
 # 开始循环赛
 for name1, func1 in players:
     for name2, func2 in players:
+        # 跳过左右互搏
+        if name1 == name2:
+            continue
+
+        # 重复9次比赛并计入统计
         for i in range(9):
             stat_(match(name1, func1, name2, func2, k=15, h=29))
+
+        # 最后一次输出log
         stat_(match_with_log(name1, func1, name2, func2, k=15, h=29))
 
 # 输出统计结果
