@@ -13,18 +13,15 @@
 - sessdsa2018-paper.io.pdf：实习作业说明PPT
 - match_core.py：游戏执行逻辑
 - visualize_console.py：控制台复盘代码
+- roundRobin.py：循环赛代码
 - AI/AI_dumb_random.py：随机游走AI
 
 ## 修改历史
-### 20180521 00：45
-- 4 fles uploaded:  
-'chessboard.py', 'roundRobin.py', 'T_random_2.py' and 'T_random_3.py'  
-'chessboard.py': some changes based on ‘match_core.py’.  
-'T_random_2.py' and 'T_random_3.py': two idiot gamers.
 
 ### 20180521
 - 陈天翔上传了控制台复盘代码，修改了执行逻辑使之支持可变回合数/思考时间，并上传了示例随机游走AI
-- 陈天翔更改复盘文件格式（由shelve对象改为pkl格式）
+- 陈天翔更改复盘文件格式（由shelve对象改为pkl格式）与输出路径（保存至log文件夹）
+- 张赖和创建了循环赛代码，并上传了另外4个示例AI
 
 ### 20180520
 - 陈天翔上传了游戏执行逻辑
