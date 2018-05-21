@@ -10,8 +10,9 @@
 > open_log(match_result) _# open result dict directly_
 
 > from __match_core__ import __match_with_log__  
-> match_with_log('noob', noob_ai, 'master', master_ai, k=25, h=49) _# output to __'noob-VS-master'__ shelf_  
-> open_log('noob-VS-master') _# open shelf file_
+> match_with_log('noob', noob_ai, 'master', master_ai, k=25, h=49) _# output to __'noob-VS-master.pkl'__ file_  
+> with open('noob-VS-master.txt', 'w') as file:  
+> &emsp;&emsp;open_log('noob-VS-master.pkl', file) _# convert .pkl to text file_
 
 - ## open_log函数
 
@@ -21,3 +22,4 @@
     - log - 对局记录，接收两种参数
         1. 记录文件名（pickle包生成的文件，包含后缀名（通常为pkl））
         2. 原始对局记录字典
+    - stream - 输出流，默认为控制台标准输出，可重定向为文本文件流

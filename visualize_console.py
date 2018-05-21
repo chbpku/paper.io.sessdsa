@@ -1,5 +1,5 @@
-import shelve
-import pickle
+import pickle, sys
+from functools import partial
 __all__ = ['open_log']
 
 # 辅助函数
@@ -113,7 +113,7 @@ if 'helpers':
         return '%s，双方得分分别为：%s\n%s' % (pre, '; '.join(scores), res)
 
 
-def open_log(log):
+def open_log(log, stream=sys.stdout):
     '''
     打开一个对局记录并可视化对局过程，输出至控制台
 
@@ -121,21 +121,37 @@ def open_log(log):
         log - 对局记录
             1. 记录文件名（shelve包生成的3文件，不包含后缀名）
             2. 原始对局记录字典
+        stream - 输出流重定向，留空则为控制台标准输出
     '''
+    # 若记录为文件路径则读取
     if isinstance(log, str):
         with open(log, 'rb') as file:
             log = pickle.load(file)
+
+    # 重定向输出函数
+    print_r = partial(print, file=stream)
+
+    # 输出比赛基本信息
     names = log['players']
     size = log['size']
     total = len(log['log'])
-    print('%s VS %s' % names)
-    print('场地大小为%dx%d，对局共%d步:' % (*size, total))
-    for slice, index in zip(log['log'], range(len(log['log']))):
-        print(step_text(names, slice, index, total))
-        print(print_frame(slice, *size))
+    print_r('%s VS %s' % names)
+    print_r('场地大小为%dx%d，最大%d回合，双方最大思考时间%s秒' % (*size, log['maxturn'],
+                                               log['maxtime']))
+    print_r('对局共%d步:' % total)
 
-    print(end_text(names, log['result']))
+    # 输出比赛过程
+    for slice, index in zip(log['log'], range(len(log['log']))):
+        print_r(step_text(names, slice, index, total))
+        print_r(print_frame(slice, *size))
+
+    # 输出比赛结果
+    print_r(end_text(names, log['result']))
 
 
 if __name__ == '__main__':
-    open_log('straight-VS-round.pkl')
+    import os
+    for file in os.listdir('log'):
+        if file.endswith('.pkl'):
+            with open('log/' + file[:-4] + '.txt', 'w') as output:
+                open_log('log/%s' % file, output)
