@@ -17,13 +17,14 @@
 
 ## 修改历史
 ### 20180521 00：45
-- 4 fles uploaded:
-'chessboard.py', 'roundRobin.py', 'T_random_2.py' and 'T_random_3.py'
-'chessboard.py': some changes based on ‘match_core.py’. 
+- 4 fles uploaded:  
+'chessboard.py', 'roundRobin.py', 'T_random_2.py' and 'T_random_3.py'  
+'chessboard.py': some changes based on ‘match_core.py’.  
 'T_random_2.py' and 'T_random_3.py': two idiot gamers.
 
 ### 20180521
 - 陈天翔上传了控制台复盘代码，修改了执行逻辑使之支持可变回合数/思考时间，并上传了示例随机游走AI
+- 陈天翔更改复盘文件格式（由shelve对象改为pkl格式）
 
 ### 20180520
 - 陈天翔上传了游戏执行逻辑
