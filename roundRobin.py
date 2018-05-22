@@ -69,8 +69,9 @@ for file in os.listdir('AI'):
         # 提取play函数
         try:
             name = file[:-3]
-            exec('import %s as ai' % name)
-            players.append((name, ai.play))
+            ai = __import__(name)
+            ai.play
+            players.append((name, ai))
 
         # 读取时出错
         except Exception as e:

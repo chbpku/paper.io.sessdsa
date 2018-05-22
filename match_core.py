@@ -287,7 +287,7 @@ if 'helpers':
         读入双方AI函数，执行一次比赛
 
         params:
-            funcs - 函数列表
+            funcs - 玩家模块列表
         
         returns:
             胜利玩家id, 终局原因编号 [, 额外描述]
@@ -306,12 +306,29 @@ if 'helpers':
         # 建立双方存储空间
         storages = [{'size': (WIDTH, HEIGHT), 'log': []} for i in range(2)]
 
+        # 双方初始化环境
+        for plr_index in (0, 1):
+            try:
+                func = funcs[plr_index].load
+            except AttributeError:
+                func = lambda storage: None
+            storage = storages[plr_index]
+
+            # 运行装载函数并计时
+            try:
+                t1 = pf()
+                func(storage)
+                t2 = pf()
+            except Exception as e:
+                return (1 - plr_index, -1, e)
+            TIMES[plr_index] -= (t2 - t1)
+
         # 执行游戏逻辑
         for i in range(MAX_TURNS):
             for plr_index in (0, 1):
                 # 获取当前玩家、AI、游戏信息、存储空间
                 plr = PLAYERS[plr_index]
-                func = funcs[plr_index]
+                func = funcs[plr_index].play
                 params = get_params(plr_index)
                 storage = storages[plr_index]
 
@@ -367,18 +384,20 @@ if 'helpers':
 
 
 # 主函数
-def match(name1, func1, name2, func2, k=9, h=15, max_turn=50, max_time=5):
+def match(name1, plr1, name2, plr2, k=9, h=15, max_turn=50, max_time=5):
     '''
     一次比赛
     params:
         name1 - 玩家1名称 (str)
-        func1 - 玩家1控制函数
-            接收游戏数据字典
-            包含纸片场地、纸带场地、玩家位置、玩家朝向等参数
-            返回操作符（left，right，None）
-            详见文件注释与get_params函数注释
+        plr1 - 玩家1代码文件
+            play函数：
+                接收游戏数据与游戏存储
+                返回操作符（left，right，None）
+            （可选）load函数：
+                接收初始的游戏存储，进行初始化
+            详见AI_Template.pdf
         name2 - 玩家2名称
-        func2 - 玩家2控制函数
+        plr2 - 玩家2代码文件
         k - 场地半宽（奇数）
         h - 场地高（奇数）
         max_turn - 总回合数（双方各行动一次为一回合）
@@ -409,7 +428,7 @@ def match(name1, func1, name2, func2, k=9, h=15, max_turn=50, max_time=5):
     LOG_PUBLIC = [get_params()]
 
     # 运行比赛，并记录终局场景
-    match_result = parse_match((func1, func2))
+    match_result = parse_match((plr1, plr2))
     if match_result[1] >= 0:
         LOG_PUBLIC.append(get_params())
 

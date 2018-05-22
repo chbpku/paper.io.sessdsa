@@ -45,7 +45,9 @@ if 'classes':
             if folder:
                 sys.path.append(folder)
             name = filename[:-3]
-            return name, __import__(name).play
+            func = __import__(name)
+            func.play
+            return name, func
 
     # 定义合法输入类
     class checked_entry:
