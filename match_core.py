@@ -1,5 +1,6 @@
 from time import perf_counter as pf
 from random import randrange
+from threading import Thread
 import pickle, os
 
 __doc__ = '''比赛逻辑
@@ -27,8 +28,55 @@ match_with_log函数同样进行比赛，但将结果通过pickles库输出为pk
 '''
 __all__ = ['match', 'match_with_log']
 
+# 超时处理
+if 'timeout':
+
+    class TimeOut(Exception):
+        pass
+
+    def ReturnThread(func, params):
+        '''
+        计时函数调用线程
+        通过函数参数传递内部函数返回值
+
+        params:
+            func - 待执行函数
+            params - 函数参数
+        '''
+        ReturnThread.result = func(*params)
+
+    def timer(timeleft, func, params):
+        '''
+        计时函数，统计一个函数运行时间并监控其是否超时
+
+        params:
+            timeleft - 剩余时间
+            func - 待执行函数
+            params - 函数参数
+
+        returns:
+            (函数返回值, 执行用时)
+        '''
+        # 初始化执行线程
+        thread = Thread(target=ReturnThread, args=(func, params))
+
+        # 运行并计时
+        thread.start()
+        t1 = pf()
+        thread.join(timeleft)
+        t2 = pf()
+
+        # 若超时则报错，否则返回消耗时间
+        if thread.is_alive():
+            raise TimeOut()
+        return ReturnThread.result, t2 - t1
+
+
 # 参数
 if 'global params':
+    # 未声明可选函数时的默认值
+    NULL = lambda storage: None
+
     # 待初始化时间参数
     MAX_TURNS = None  # 最大回合数（双方各操作一次为一回合）
     MAX_TIME = None  # 总思考时间（秒）
@@ -308,20 +356,22 @@ if 'helpers':
 
         # 双方初始化环境
         for plr_index in (0, 1):
+            # 为未声明load函数分配默认值
             try:
                 func = funcs[plr_index].load
             except AttributeError:
-                func = lambda storage: None
+                func = NULL
             storage = storages[plr_index]
 
             # 运行装载函数并计时
             try:
-                t1 = pf()
-                func(storage)
-                t2 = pf()
+                timecost = timer(MAX_TIME, func, (storage, ))[1]
+            except TimeOut:
+                return (1 - plr_index, -2)
             except Exception as e:
                 return (1 - plr_index, -1, e)
-            TIMES[plr_index] -= (t2 - t1)
+
+            TIMES[plr_index] -= timecost
 
         # 执行游戏逻辑
         for i in range(MAX_TURNS):
@@ -329,22 +379,21 @@ if 'helpers':
                 # 获取当前玩家、AI、游戏信息、存储空间
                 plr = PLAYERS[plr_index]
                 func = funcs[plr_index].play
-                params = get_params(plr_index)
+                stat = get_params(plr_index)
                 storage = storages[plr_index]
 
-                # 执行AI返回操作符号
+                # 执行AI并计时
                 try:
-                    t1 = pf()
-                    action = func(params, storage)
-                    t2 = pf()
+                    action, timecost = timer(TIMES[plr_index], func,
+                                             (stat, storage))
+                except TimeOut:  # 超时
+                    return (1 - plr_index, -2)
                 except Exception as e:  # AI函数报错
                     return (1 - plr_index, -1, e)
-                TURNS[plr_index] -= 1
 
-                # 判断是否超时
-                TIMES[plr_index] -= (t2 - t1)
-                if TIMES[plr_index] < 0:
-                    return (1 - plr_index, -2)
+                # 更新剩余回合数、用时
+                TURNS[plr_index] -= 1
+                TIMES[plr_index] -= timecost
 
                 # 根据操作符转向
                 if isinstance(action, str) and len(action) > 0:
