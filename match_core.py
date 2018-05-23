@@ -43,7 +43,10 @@ if 'timeout':
             func - 待执行函数
             params - 函数参数
         '''
-        ReturnThread.result = func(*params)
+        try:
+            ReturnThread.result = func(*params)
+        except Exception as e:
+            ReturnThread.result = e
 
     def timer(timeleft, func, params):
         '''
@@ -69,6 +72,10 @@ if 'timeout':
         # 若超时则报错，否则返回消耗时间
         if thread.is_alive():
             raise TimeOut()
+
+        # 返回函数结果或抛出异常
+        if isinstance(ReturnThread.result, Exception):
+            raise ReturnThread.result
         return ReturnThread.result, t2 - t1
 
 
