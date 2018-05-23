@@ -134,7 +134,8 @@ if 'classes':
             self.old_timer = pf()
             self._load_screen()
             self._update_screen()
-            self.button1['state'] = ACTIVE
+            if len(self.frame_seq)>1:
+                self.button1['state'] = ACTIVE
 
         def update(self):
             '''实时更新显示，实现逐帧播放效果'''
@@ -168,11 +169,11 @@ if 'classes':
             self.screen_text.set(
                 print_frame(self.frame_seq[self.curr_frame], *self.size))
 
-            if self.curr_frame == 0:
-                self.info.set('对局共%d回合（%d步）:' % (self.total // 2, self.total))
-            elif self.curr_frame == len(self.frame_seq) - 1:
+            if self.curr_frame == len(self.frame_seq) - 1:
                 self.info.set(
                     end_text(self.names, self.match_result['result']))
+            elif self.curr_frame == 0:
+                self.info.set('对局共%d回合（%d步）:' % (self.total // 2, self.total))
             else:
                 self.info.set(
                     step_text(self.names, self.frame_seq[self.curr_frame],
@@ -346,7 +347,7 @@ if 'widget':
     width_set = checked_entry(solo_frame, int, 15, '场地半宽：')
     height_set = checked_entry(solo_frame, int, 29, '场地高：')
     turns_set = checked_entry(solo_frame, int, 50, '最大回合数：')
-    time_set = checked_entry(solo_frame, float, 5, '总计思考时间：')
+    time_set = checked_entry(solo_frame, float, 1, '总计思考时间：')
     Button(
         solo_frame, text='SOLO!', command=run_match).pack(
             side=LEFT, fill=Y, pady=[5, 0], padx=[0, 5])
