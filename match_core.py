@@ -379,6 +379,8 @@ if 'helpers':
                 return (1 - plr_index, -1, e)
 
             TIMES[plr_index] -= timecost
+            if TIMES[plr_index] <= 0:
+                return (1 - plr_index, -2)
 
         # 执行游戏逻辑
         for i in range(MAX_TURNS):
@@ -401,6 +403,8 @@ if 'helpers':
                 # 更新剩余回合数、用时
                 TURNS[plr_index] -= 1
                 TIMES[plr_index] -= timecost
+                if TIMES[plr_index] <= 0:
+                    return (1 - plr_index, -2)
 
                 # 根据操作符转向
                 if isinstance(action, str) and len(action) > 0:
