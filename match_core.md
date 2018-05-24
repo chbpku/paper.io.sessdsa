@@ -6,11 +6,11 @@
 
 用法：
 > from __match_core__ import __match__  
-> match_result = match('noob', noob_ai, 'master', master_ai, k=25, h=49) _# noob VS master in 50*49 field_
+> match_result = match('noob', noob_ai, 'master', master_ai, k=51, h=101) _# noob VS master in 50*49 field_
 > match_result['log'] _# each step including endgame_
 
 > from __match_core__ import __match_with_log__  
-> match_with_log('noob', noob_ai, 'master', master_ai, max_turn=5, max_time=1) _# output to __'noob-VS-master'__ shelf_
+> match_with_log('noob', noob_ai, 'master', master_ai) _# output to __'noob-VS-master'__ pkl log_
 
 - ## match函数
 
@@ -113,3 +113,16 @@
         > -2 - 超时  
         > -3 - 回合数耗尽，结算得分
     2. 额外信息
+
+----
+
+- ## FRAME_FUNC接口
+
+    在每次新的游戏状态向公共记录log添加前运行，接收参数为该帧内容
+
+    未在 __\_\_all\_\___ 中开放，可直接覆盖match_core.FRAME_FUNC以使用该接口
+
+    > from __match_core__ import __match__  
+    > import __match_core__  
+    > match_core.FRAME_FUNC = my_parse_frame _# override frame function_  
+    > match('noob', noob_ai, 'master', master_ai)

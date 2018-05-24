@@ -96,6 +96,9 @@ if 'global params':
     FIELDS = None  # 已生成区域判定区 = [[None] * HEIGHT for i in range(WIDTH)]
     PLAYERS = [None] * 2
 
+    # 处理每回合状态函数接口
+    FRAME_FUNC = NULL
+
 
 # 玩家对象执行游戏逻辑
 class player:
@@ -334,7 +337,7 @@ if 'helpers':
             res['enemy'] = PLAYERS[1 - curr_plr].get_info()
         else:
             res['band_route'] = list(
-                map(lambda plr: plr.band_direction, PLAYERS))
+                map(lambda plr: plr.band_direction[:], PLAYERS))
         return res
 
     def parse_match(funcs):
@@ -423,7 +426,9 @@ if 'helpers':
                 storages[plr_index]['log'].append(get_params(plr_index))
                 storages[1 - plr_index]['log'].append(
                     get_params(1 - plr_index))
-                LOG_PUBLIC.append(get_params())
+                frame = get_params()
+                FRAME_FUNC(frame)  # 帧处理函数接口
+                LOG_PUBLIC.append(frame)
 
         # 回合数耗尽
         return (None, -3)
@@ -485,12 +490,16 @@ def match(name1, plr1, name2, plr2, k=9, h=15, max_turn=50, max_time=5):
 
     # 建立空log列表
     global LOG_PUBLIC
-    LOG_PUBLIC = [get_params()]
+    frame = get_params()
+    FRAME_FUNC(frame)
+    LOG_PUBLIC = [frame]
 
     # 运行比赛，并记录终局场景
     match_result = parse_match((plr1, plr2))
     if match_result[1] >= 0:
-        LOG_PUBLIC.append(get_params())
+        frame = get_params()
+        FRAME_FUNC(frame)
+        LOG_PUBLIC.append(frame)
 
     # 如果平手则统计得分
     if abs(match_result[1]) == 3:
