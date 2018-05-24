@@ -11,6 +11,7 @@ from match_core import match
 MAX_W, MAX_H = 800, 600  # 最大宽高
 MARGIN_WIDTH = 5  # 画布外留白
 PADDING_WIDTH = 5  # 画布边框到场地距离
+FRAME_STEP = 0.1  # 帧间隔
 
 # 自定义类
 if 'classes':
@@ -145,6 +146,7 @@ if 'classes':
 
             # 渲染初始场景
             self._update_screen(self.frame_seq[0])
+            self.button1['state'] = DISABLED
             if len(self.frame_seq) > 1:
                 self.button1['state'] = ACTIVE
 
@@ -153,7 +155,7 @@ if 'classes':
             if self.playing_status <= 0:
                 return
             curr_time = pf()
-            if curr_time - self.old_timer >= 0.1:
+            if curr_time - self.old_timer >= FRAME_STEP:
                 self.old_timer = curr_time
                 self.frame_index += 1
                 self._update_screen(self.frame_seq[self.frame_index])
