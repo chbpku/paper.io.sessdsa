@@ -2,8 +2,15 @@ from tkinter import *
 from tkinter.filedialog import askopenfilename, askdirectory
 from tkinter.messagebox import showerror
 from time import perf_counter as pf
-import os, sys
+from colorsys import hsv_to_rgb
+import os, sys, pickle
+
 from match_core import match
+
+# 自定义参数
+MAX_W, MAX_H = 800, 600  # 最大宽高
+MARGIN_WIDTH = 5  # 画布外留白
+PADDING_WIDTH = 5  # 画布边框到场地距离
 
 # 自定义类
 if 'classes':
@@ -16,10 +23,7 @@ if 'classes':
             Label(self.frame, text=display_text).pack(side=LEFT)
 
             # 读取文件或设置输出目录
-            if is_read:
-                self._path_func = askopenfilename
-            else:
-                self._path_func = askdirectory
+            self.is_read = is_read
             Button(
                 self.frame, text='浏览',
                 command=self.button_func).pack(side=RIGHT)
@@ -31,22 +35,24 @@ if 'classes':
                     fill=X, pady=[3, 0])
 
         def button_func(self):
-            path = self._path_func()
+            if self.is_read:
+                path = askopenfilename(filetypes=[('AI脚本', '*.py'), ('全部文件',
+                                                                     '*.*')])
+            else:
+                path = askdirectory()
             if path:
                 self.path_var.set(path)
 
         def get_player(self):
             fullpath = self.path_var.get()
             if not fullpath:
-                raise Exception('请输入路径')
+                raise Exception('请选择文件')
             folder, filename = os.path.split(fullpath)
-            if filename[-3:] != '.py':
-                raise Exception('不受支持的文件类型：%s' % filename)
             if folder:
                 sys.path.append(folder)
             name = filename[:-3]
             func = __import__(name)
-            func.play
+            func.play  # 检查play函数是否存在
             return name, func
 
     # 定义合法输入类
@@ -100,7 +106,9 @@ if 'classes':
 
             # 信息栏
             self.info = StringVar(value='选择双方AI文件后点击“SOLO”按钮开始比赛')
-            Label(self.panel, textvariable=self.info).pack(anchor=W)
+            Label(
+                self.panel, textvariable=self.info,
+                justify=LEFT).pack(anchor=W)
 
             # 显示接口
             self._init_screen()
@@ -121,20 +129,23 @@ if 'classes':
             elif self.playing_status == -1:
                 self.button1['text'] = '播放'
                 self.playing_status = 0
-                self.curr_frame = 0
-                self._update_screen()
+                self.frame_index = 0
+                self._update_screen(self.frame_seq[0])
 
         def load_match_result(self, res):
             '''加载对局记录'''
             self.match_result = res
             self.frame_seq = res['log']
-            self.curr_frame = 0
+            self.frame_index = 0
+            self.last_frame = None
             self.playing_status = 0
             self.button1['text'] = '播放'
             self.old_timer = pf()
             self._load_screen()
-            self._update_screen()
-            if len(self.frame_seq)>1:
+
+            # 渲染初始场景
+            self._update_screen(self.frame_seq[0])
+            if len(self.frame_seq) > 1:
                 self.button1['state'] = ACTIVE
 
         def update(self):
@@ -144,58 +155,165 @@ if 'classes':
             curr_time = pf()
             if curr_time - self.old_timer >= 0.1:
                 self.old_timer = curr_time
-                self.curr_frame += 1
-                self._update_screen()
+                self.frame_index += 1
+                self._update_screen(self.frame_seq[self.frame_index])
 
                 # 一次循环播放结束
-                if self.curr_frame == len(self.frame_seq) - 1:
+                if self.frame_index == len(self.frame_seq) - 1:
                     self.playing_status = -1
                     self.button1['text'] = '重置'
 
         # 以下为可变屏幕接口
 
         def _init_screen(self):
-            self.screen_text = StringVar()
-            Label(
-                self.root, textvariable=self.screen_text,
-                font=('consolas', 8)).pack(fill=X)
+            self.cv = Canvas(self.root, highlightthickness=0, height=100)
+            self.cv_size = None
+            self.cv.pack(padx=MARGIN_WIDTH, pady=MARGIN_WIDTH)
 
         def _load_screen(self):
             self.size = self.match_result['size']
             self.names = self.match_result['players']
             self.total = len(self.frame_seq)
 
-        def _update_screen(self):
-            self.screen_text.set(
-                print_frame(self.frame_seq[self.curr_frame], *self.size))
+            # 若网格变动则重新生成
+            if self.cv_size == self.size:
+                return
+            self.cv.delete('all')
+            self.cv_size = self.size
 
-            if self.curr_frame == len(self.frame_seq) - 1:
+            # 计算网格宽度
+            self.grid = int(min(MAX_W / self.size[0], MAX_H / self.size[1]))
+            self.grid = max(6, min(200, self.grid))
+
+            # 设置画布大小及边框大小
+            self.cv.config(
+                width=PADDING_WIDTH * 2 + self.size[0] * self.grid,
+                height=PADDING_WIDTH * 2 + self.size[1] * self.grid)
+            self.cv.create_rectangle(
+                (0, 0, int(self.cv['width']) - 1, int(self.cv['height']) - 1),
+                outline='black')
+
+            # 排布网格
+            self.pixels = []
+            for x in range(self.size[0]):
+                col = []
+                for y in range(self.size[1]):
+                    sx, sy = PADDING_WIDTH + x * self.grid, PADDING_WIDTH + y * self.grid
+                    pixel = self.cv.create_rectangle(
+                        (sx, sy, sx + self.grid, sy + self.grid),
+                        fill='',
+                        outline='')
+                    col.append(pixel)
+                self.pixels.append(col)
+
+            # 根据AI名称生成颜色
+            hues = [(hash(self.names[i]) % 100) / 100 for i in (0, 1)]
+            if self.names[0] == self.names[1]:
+                hues[1] += 0.5
+            sats = [(hash(self.names[i][::-1]) % 100) / 200 + 0.5
+                    for i in (0, 1)]
+            self.colors = [
+                gen_color_text(hues[i], sats[i], 0.7) for i in (0, 1)
+            ]
+
+            # 生成纸带
+            self.bands = [
+                self.cv.create_line(
+                    (-1, -1, -1, -1),
+                    fill=gen_color_text(hues[i], sats[i], 0.85),
+                    width=self.grid * 0.5) for i in (0, 1)
+            ]
+
+            # 生成玩家
+            self.players = [
+                self.cv.create_oval(
+                    (-1, -1, -1, -1),
+                    fill=gen_color_text(hues[i], sats[i], 0.85),
+                    outline=gen_color_text(hues[i], sats[i], 0.2))
+                for i in (0, 1)
+            ]
+
+        def _update_screen(self, cur_frame):
+            # 更新网格
+            for x in range(self.size[0]):
+                for y in range(self.size[1]):
+                    content = cur_frame['fields'][x][y]
+                    if self.frame_index and self.last_frame and \
+                            content == self.last_frame['fields'][x][y]:
+                        continue
+                    color = self.root['bg'] if content is None \
+                                else self.colors[content - 1]
+                    self.cv.itemconfig(self.pixels[x][y], fill=color)
+
+            # 更新玩家
+            plr_pos = [(cur_frame['players'][i]['x'],
+                        cur_frame['players'][i]['y']) for i in (0, 1)]
+            for i in (0, 1):
+                # 设置玩家位置
+                sx, sy = PADDING_WIDTH + plr_pos[i][0] * self.grid, PADDING_WIDTH + plr_pos[i][1] * self.grid
+                self.cv.coords(self.players[i], sx, sy, sx + self.grid,
+                               sy + self.grid)
+
+                # 设置纸带
+                sx += self.grid / 2
+                sy += self.grid / 2
+                band_route = [sx, sy]
+                for step in cur_frame['band_route'][i][::-1]:
+                    if step % 2:
+                        sy += (-1 + 2 * (step == 3)) * self.grid
+                    else:
+                        sx += (-1 + 2 * (step == 2)) * self.grid
+                    band_route.append(sx)
+                    band_route.append(sy)
+                if len(band_route) > 2:
+                    band_route[-1] = (band_route[-1] + band_route[-3]) / 2
+                    band_route[-2] = (band_route[-2] + band_route[-4]) / 2
+                    self.cv.coords(self.bands[i], band_route)
+                else:
+                    self.cv.coords(self.bands[i], -1, -1, -1, -1)
+
+            # 更新屏幕信息
+            if self.frame_index == len(self.frame_seq) - 1:
                 self.info.set(
                     end_text(self.names, self.match_result['result']))
-            elif self.curr_frame == 0:
-                self.info.set('对局共%d回合（%d步）:' % (self.total // 2, self.total))
             else:
                 self.info.set(
-                    step_text(self.names, self.frame_seq[self.curr_frame],
-                              self.curr_frame, self.total))
+                    step_text(self.names, cur_frame, self.frame_index,
+                              self.total))
+
+            # 记录已渲染的帧用作参考
+            self.last_frame = cur_frame
 
 
 # 自定义函数
 if 'funcs':
+
+    def load_log():
+        log_path = askopenfilename(filetypes=[('对战记录文件', '*.pkl'), ('全部文件',
+                                                                    '*.*')])
+        if not log_path: return
+        try:
+            with open(log_path, 'rb') as file:
+                log = pickle.load(file)
+        except Exception as e:
+            showerror('%s: %s' % (os.path.split()[1], type(e).__name__),
+                      str(e))
+            return
+        display.load_match_result(log)
 
     def run_match():
         # 玩家1
         try:
             name1, func1 = plr1_dir.get_player()
         except Exception as e:
-            showerror('在读取玩家1代码时出错', str(e))
+            showerror('玩家1 %s' % type(e).__name__, str(e))
             return
 
         # 玩家2
         try:
             name2, func2 = plr2_dir.get_player()
         except Exception as e:
-            showerror('在读取玩家2代码时出错', str(e))
+            showerror('玩家2 %s' % type(e).__name__, str(e))
             return
 
         # 进行比赛
@@ -203,46 +321,15 @@ if 'funcs':
                              height_set.get(), turns_set.get(), time_set.get())
         display.load_match_result(match_result)
 
-    def print_frame(slice, w, h):
-        '''
-        渲染一帧内容
-
-        params:
-            slice - 一回合游戏数据
-            w, h - 场地大小
-        
-        returns:
-            一帧游戏内容字符串（末尾无\n）
-        '''
-        # 初始化
-        frame = '=' * (w * 3 + 2) + '\n'  # 一帧字符串
-        buffer = {}  # 渲染缓冲区
-
-        # 遍历场地
-        for y in range(h):
-            for x in range(w):
-                if slice['bands'][x][y] is not None:
-                    if slice['fields'][x][y] is not None:
-                        buffer[x, y] = '+%s+' % slice['bands'][x][y]
-                    else:
-                        buffer[x, y] = ' %s ' % slice['bands'][x][y]
-                elif slice['fields'][x][y] is not None:
-                    buffer[x, y] = '-%s-' % slice['fields'][x][y]
-
-        # 输出玩家位置
-        for plr in slice['players']:
-            buffer[plr['x'], plr['y']] = '[%s]' % plr['id']
-
-        # 拼接字符串
-        for y in range(h):
-            frame += '|'
-            for x in range(w):
-                frame += buffer.get((x, y), '   ')
-            frame += '|\n'
-        frame += '=' * (w * 3 + 2)
-
-        # 返回
-        return frame
+        # 比赛记录
+        output_dir = log_dir.path_var.get()
+        if not output_dir:
+            return
+        os.makedirs(output_dir, exist_ok=1)
+        with open(
+                os.path.join(output_dir, '%s-VS-%s.pkl' % (name1, name2)),
+                'wb') as file:
+            pickle.dump(match_result, file)
 
     def step_text(names, slice, index, total):
         '''
@@ -258,7 +345,8 @@ if 'funcs':
         '''
         # 初始信息
         if index == 0:
-            return '初始场景，先手玩家%s面朝%s；后手玩家%s面朝%s.' % (\
+            return '对局共%d回合（%d步）\n先手玩家%s面朝%s；后手玩家%s面朝%s' % (\
+                total//2, total, \
                 names[0], \
                 '东南西北' [slice['players'][0]['direction']], \
                 names[1], \
@@ -274,7 +362,7 @@ if 'funcs':
         plr_movement = '东南西北' [slice['players'][plr_ind]['direction']]
 
         # 合成
-        return res + '玩家%s向%s移动.' % (plr_name, plr_movement)
+        return res + '玩家%s向%s移动.\n' % (plr_name, plr_movement)
 
     def end_text(names, result):
         '''
@@ -301,32 +389,47 @@ if 'funcs':
         f, s = names if result[0] else names[::-1]  # 失败+成功顺序玩家名称
 
         if rtype == 0:
-            return '由于玩家%s撞墙，玩家%s获得胜利' % (f, s)
+            return '由于玩家%s撞墙，\n玩家%s获得胜利' % (f, s)
 
         if rtype == 1:
             if result[0] != result[2]:
-                return '由于玩家%s撞纸带自杀，玩家%s获得胜利' % (f, s)
+                return '由于玩家%s撞纸带自杀，\n玩家%s获得胜利' % (f, s)
             else:
-                return '玩家%s撞击对手纸带，获得胜利' % s
+                return '玩家%s撞击对手纸带，获得胜利\n' % s
 
         if rtype == 2:
-            return '玩家%s侧面撞击对手，获得胜利' % s
+            return '玩家%s侧面撞击对手，获得胜利\n' % s
 
         if rtype == 4:
             if result[2]:
-                return '玩家%s在领地内撞击对手，获得胜利' % s
-            return '玩家%s在领地内被对手撞击，获得胜利' % s
+                return '玩家%s在领地内撞击对手，获得胜利\n' % s
+            return '玩家%s在领地内被对手撞击，获得胜利\n' % s
 
         if rtype == -1:
-            return '由于玩家%s函数报错(%s)，\n玩家%s获得胜利' % (f, result[2], s)
+            return '由于玩家%s函数报错(%s: %s)，\n玩家%s获得胜利' % (f,
+                                                      type(result[2]).__name__,
+                                                      result[2], s)
 
         if rtype == -2:
-            return '由于玩家%s决策时间耗尽，玩家%s获得胜利' % (f, s)
+            return '由于玩家%s决策时间耗尽，\n玩家%s获得胜利' % (f, s)
 
         pre = '玩家正碰' if rtype == 3 else '回合数耗尽'
         scores = (('%s: %d' % pair) for pair in zip(names, result[2]))
         res = '平局' if result[0] is None else ('玩家%s获胜' % s)
         return '%s，双方得分分别为：%s\n%s' % (pre, '; '.join(scores), res)
+
+    def gen_color_text(h, s, v):
+        '''
+        hsv to rgb text
+
+        params:
+            h, s, v
+        
+        return:
+            str : #xxxxxx
+        '''
+        raw = hsv_to_rgb(h, s, v)
+        return '#%02x%02x%02x' % tuple(map(lambda x: int(x * 255), raw))
 
 
 # 合成窗口
@@ -334,6 +437,7 @@ if 'widget':
     # 定义窗口
     tk = Tk()
     tk.title('Solo!')
+    tk.geometry('+%d+0' % (tk.winfo_screenwidth() / 2 - 300))
     tk.resizable(0, 0)
 
     # 文件读取模块
@@ -343,14 +447,17 @@ if 'widget':
 
     # 比赛设置
     solo_frame = Frame(tk)
-    solo_frame.pack(fill=X)
-    width_set = checked_entry(solo_frame, int, 15, '场地半宽：')
-    height_set = checked_entry(solo_frame, int, 29, '场地高：')
-    turns_set = checked_entry(solo_frame, int, 50, '最大回合数：')
-    time_set = checked_entry(solo_frame, float, 1, '总计思考时间：')
+    solo_frame.pack(padx=5, fill=X)
+    width_set = checked_entry(solo_frame, int, 51, '场地半宽：')
+    height_set = checked_entry(solo_frame, int, 101, '场地高：')
+    turns_set = checked_entry(solo_frame, int, 1000, '最大回合数：')
+    time_set = checked_entry(solo_frame, float, 0.1, '总计思考时间：')
     Button(
         solo_frame, text='SOLO!', command=run_match).pack(
-            side=LEFT, fill=Y, pady=[5, 0], padx=[0, 5])
+            side=LEFT, fill=Y, pady=[5, 0], padx=5)
+    Button(
+        solo_frame, text='读取记录', command=load_log).pack(
+            side=LEFT, fill=Y, pady=[5, 0], padx=[5, 0])
     display = display_frame(tk)
 
 # 运行窗口
