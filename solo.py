@@ -210,7 +210,7 @@ if 'classes':
 
             # 根据AI名称生成颜色
             hues = [(hash(self.names[i]) % 100) / 100 for i in (0, 1)]
-            if self.names[0] == self.names[1]:
+            if abs(hues[0] - hues[1]) < 0.1:
                 hues[1] += 0.5
             sats = [(hash(self.names[i][::-1]) % 100) / 200 + 0.5
                     for i in (0, 1)]
