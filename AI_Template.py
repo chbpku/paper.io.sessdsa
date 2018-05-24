@@ -34,3 +34,4 @@ def load(storage):
     params:
         storage - 游戏存储，初始只包含size关键字内容
     '''
+    pass
