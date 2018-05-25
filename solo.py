@@ -92,7 +92,6 @@ if 'classes':
     class display_frame:
         def __init__(self, root):
             self.root = root
-            self.match_result = None
             self.panel = Frame(root)
             self.panel.pack(padx=5, pady=5, fill=X)
 
@@ -133,23 +132,6 @@ if 'classes':
                 self.frame_index = 0
                 self._update_screen(self.frame_seq[0])
 
-        def load_match_result(self, res):
-            '''加载对局记录'''
-            self.match_result = res
-            self.frame_seq = res['log']
-            self.frame_index = 0
-            self.last_frame = None
-            self.playing_status = 0
-            self.button1['text'] = '播放'
-            self.old_timer = pf()
-            self._load_screen()
-
-            # 渲染初始场景
-            self._update_screen(self.frame_seq[0])
-            self.button1['state'] = DISABLED
-            if len(self.frame_seq) > 1:
-                self.button1['state'] = ACTIVE
-
         def update(self):
             '''实时更新显示，实现逐帧播放效果'''
             if self.playing_status <= 0:
@@ -165,23 +147,49 @@ if 'classes':
                     self.playing_status = -1
                     self.button1['text'] = '重置'
 
-        # 以下为可变屏幕接口
+        def load_match_result(self, log, init=True):
+            '''读取比赛记录'''
+            self.match_result = log['result']
+
+            # 初始化场景、时间轴
+            if init:
+                self._setup_grid(log['size'])
+                self._setup_players(log['players'])
+            self.frame_seq = log['log']
+            self.frame_index = 0
+            self.playing_status = 0
+            self.button1['text'] = '播放'
+            self.old_timer = pf()
+
+            # 在包含不同画面时启用播放按钮
+            if len(self.frame_seq) > 1:
+                self.button1['state'] = ACTIVE
+            else:
+                self.button1['state'] = DISABLED
+
+            # 渲染第一帧
+            self._update_screen(self.frame_seq[0])
 
         def _init_screen(self):
+            '''初始化显示相关组件'''
+            # 窗口控件
             self.cv = Canvas(self.root, highlightthickness=0, height=100)
             self.cv_size = None
             self.cv.pack(padx=MARGIN_WIDTH, pady=MARGIN_WIDTH)
 
-        def _load_screen(self):
-            self.size = self.match_result['size']
-            self.names = self.match_result['players']
-            self.total = len(self.frame_seq)
+            # 变量
+            self.size = (0, 0)
+            self.frame_index = 0
+            self.frame_seq = []
+            self.last_frame = None
+            self.names = None
+            self.match_result = None
 
-            # 若网格变动则重新生成
-            if self.cv_size == self.size:
+        def _setup_grid(self, size):
+            '''设置屏幕网格'''
+            if self.size == size:
                 return
-            self.cv.delete('all')
-            self.cv_size = self.size
+            self.size = size
 
             # 计算网格宽度
             self.grid = int(min(MAX_W / self.size[0], MAX_H / self.size[1]))
@@ -189,17 +197,17 @@ if 'classes':
 
             # 设置画布大小及边框大小
             self.cv.config(
-                width=PADDING_WIDTH * 2 + self.size[0] * self.grid,
-                height=PADDING_WIDTH * 2 + self.size[1] * self.grid)
+                width=PADDING_WIDTH * 2 + size[0] * self.grid,
+                height=PADDING_WIDTH * 2 + size[1] * self.grid)
             self.cv.create_rectangle(
                 (0, 0, int(self.cv['width']) - 1, int(self.cv['height']) - 1),
                 outline='black')
 
             # 排布网格
             self.pixels = []
-            for x in range(self.size[0]):
+            for x in range(size[0]):
                 col = []
-                for y in range(self.size[1]):
+                for y in range(size[1]):
                     sx, sy = PADDING_WIDTH + x * self.grid, PADDING_WIDTH + y * self.grid
                     pixel = self.cv.create_rectangle(
                         (sx, sy, sx + self.grid, sy + self.grid),
@@ -208,15 +216,21 @@ if 'classes':
                     col.append(pixel)
                 self.pixels.append(col)
 
+            # 更新窗口显示
+            self.root.update()
+
+        def _setup_players(self, names):
+            '''根据玩家名生成颜色主题'''
+            if names == self.names:
+                return
+            self.names = names
+            self.cv.delete('players')
+
             # 根据AI名称生成颜色
-            hues = [(hash(self.names[i]) % 100) / 100 for i in (0, 1)]
+            hues = [(hash(names[i]) % 100) / 100 for i in (0, 1)]
             if abs(hues[0] - hues[1]) < 0.1:
-                if hues[1] < 0.45:
-                    hues[1] += 0.5
-                else:
-                    hues[1] -= 0.4
-            sats = [(hash(self.names[i][::-1]) % 100) / 200 + 0.5
-                    for i in (0, 1)]
+                hues[1] += 0.5
+            sats = [(hash(names[i][::-1]) % 100) / 200 + 0.5 for i in (0, 1)]
             self.colors = [
                 gen_color_text(hues[i], sats[i], 0.7) for i in (0, 1)
             ]
@@ -226,7 +240,8 @@ if 'classes':
                 self.cv.create_line(
                     (-1, -1, -1, -1),
                     fill=gen_color_text(hues[i], sats[i], 0.85),
-                    width=self.grid * 0.5) for i in (0, 1)
+                    width=self.grid * 0.5,
+                    tag='players') for i in (0, 1)
             ]
 
             # 生成玩家
@@ -234,11 +249,15 @@ if 'classes':
                 self.cv.create_oval(
                     (-1, -1, -1, -1),
                     fill=gen_color_text(hues[i], sats[i], 0.85),
-                    outline=gen_color_text(hues[i], sats[i], 0.2))
-                for i in (0, 1)
+                    outline=gen_color_text(hues[i], sats[i], 0.2),
+                    tag='players') for i in (0, 1)
             ]
 
+            # 重置帧
+            self.last_frame = None
+
         def _update_screen(self, cur_frame):
+            '''更新一帧内容'''
             # 更新网格
             for x in range(self.size[0]):
                 for y in range(self.size[1]):
@@ -279,62 +298,18 @@ if 'classes':
 
             # 更新屏幕信息
             if self.frame_index == len(self.frame_seq) - 1:
-                self.info.set(
-                    end_text(self.names, self.match_result['result']))
+                self.info.set(end_text(self.names, self.match_result))
             else:
                 self.info.set(
                     step_text(self.names, cur_frame, self.frame_index,
-                              self.total))
+                              len(self.frame_seq)))
 
             # 记录已渲染的帧用作参考
             self.last_frame = cur_frame
 
 
-# 自定义函数
-if 'funcs':
-
-    def load_log():
-        log_path = askopenfilename(filetypes=[('对战记录文件', '*.pkl'), ('全部文件',
-                                                                    '*.*')])
-        if not log_path: return
-        try:
-            with open(log_path, 'rb') as file:
-                log = pickle.load(file)
-        except Exception as e:
-            showerror('%s: %s' % (os.path.split()[1], type(e).__name__),
-                      str(e))
-            return
-        display.load_match_result(log)
-
-    def run_match():
-        # 玩家1
-        try:
-            name1, func1 = plr1_dir.get_player()
-        except Exception as e:
-            showerror('玩家1 %s' % type(e).__name__, str(e))
-            return
-
-        # 玩家2
-        try:
-            name2, func2 = plr2_dir.get_player()
-        except Exception as e:
-            showerror('玩家2 %s' % type(e).__name__, str(e))
-            return
-
-        # 进行比赛
-        match_result = match(name1, func1, name2, func2, width_set.get(),
-                             height_set.get(), turns_set.get(), time_set.get())
-        display.load_match_result(match_result)
-
-        # 比赛记录
-        output_dir = log_dir.path_var.get()
-        if not output_dir:
-            return
-        os.makedirs(output_dir, exist_ok=1)
-        with open(
-                os.path.join(output_dir, '%s-VS-%s.pkl' % (name1, name2)),
-                'wb') as file:
-            pickle.dump(match_result, file)
+# 显示函数
+if 'display funcs':
 
     def step_text(names, slice, index, total):
         '''
@@ -344,7 +319,6 @@ if 'funcs':
             slice - 当前回合游戏信息
             index - 当前步数（由0计数）
             total - 总步数
-
         returns:
             一行字符串
         '''
@@ -372,7 +346,6 @@ if 'funcs':
     def end_text(names, result):
         '''
         对局总结
-
         终局原因:
             0 - 撞墙
             1 - 纸带碰撞
@@ -382,7 +355,6 @@ if 'funcs':
             -1 - AI函数报错
             -2 - 超时
             -3 - 回合数耗尽，结算得分
-
         params:
             names - 玩家名称
             result - 对局结果
@@ -426,7 +398,6 @@ if 'funcs':
     def gen_color_text(h, s, v):
         '''
         hsv to rgb text
-
         params:
             h, s, v
         
@@ -435,6 +406,57 @@ if 'funcs':
         '''
         raw = hsv_to_rgb(h, s, v)
         return '#%02x%02x%02x' % tuple(map(lambda x: int(x * 255), raw))
+
+
+# 调用函数
+if 'race funcs':
+
+    def load_log():
+        log_path = askopenfilename(filetypes=[('对战记录文件', '*.pkl'), ('全部文件',
+                                                                    '*.*')])
+        if not log_path: return
+        try:
+            with open(log_path, 'rb') as file:
+                log = pickle.load(file)
+        except Exception as e:
+            showerror('%s: %s' % (os.path.split()[1], type(e).__name__),
+                      str(e))
+            return
+        display.load_match_result(log)
+
+    def run_match():
+        # 玩家1
+        try:
+            name1, func1 = plr1_dir.get_player()
+        except Exception as e:
+            showerror('玩家1 %s' % type(e).__name__, str(e))
+            return
+
+        # 玩家2
+        try:
+            name2, func2 = plr2_dir.get_player()
+        except Exception as e:
+            showerror('玩家2 %s' % type(e).__name__, str(e))
+            return
+
+        # 设置比赛场地显示
+        display._setup_grid((width_set.get() * 2, height_set.get()))
+        display._setup_players((name1, name2))
+
+        # 进行比赛
+        match_result = match(name1, func1, name2, func2, width_set.get(),
+                             height_set.get(), turns_set.get(), time_set.get())
+        display.load_match_result(match_result, False)
+
+        # 比赛记录
+        output_dir = log_dir.path_var.get()
+        if not output_dir:
+            return
+        os.makedirs(output_dir, exist_ok=1)
+        with open(
+                os.path.join(output_dir, '%s-VS-%s.pkl' % (name1, name2)),
+                'wb') as file:
+            pickle.dump(match_result, file)
 
 
 # 合成窗口
