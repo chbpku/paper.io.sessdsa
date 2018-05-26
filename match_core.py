@@ -96,6 +96,10 @@ if 'global params':
     FIELDS = None  # 已生成区域判定区 = [[None] * HEIGHT for i in range(WIDTH)]
     PLAYERS = [None] * 2
 
+    # AI函数存储空间与跨比赛记忆
+    STORAGE = [None] * 2
+    MEMORY = [{}, {}]
+
     # 处理每回合状态函数接口
     FRAME_FUNC = NULL
 
@@ -361,9 +365,6 @@ if 'helpers':
         '''
         t1, t2, action = 0, 0, None  # 在字典提前初始化计时变量、存放操作结果变量，去除新建变量耗时因素
 
-        # 建立双方存储空间
-        storages = [{'size': (WIDTH, HEIGHT), 'log': []} for i in range(2)]
-
         # 双方初始化环境
         for plr_index in (0, 1):
             # 为未声明load函数分配默认值
@@ -371,7 +372,7 @@ if 'helpers':
                 func = funcs[plr_index].load
             except AttributeError:
                 func = NULL
-            storage = storages[plr_index]
+            storage = STORAGE[plr_index]
 
             # 运行装载函数并计时
             try:
@@ -392,7 +393,7 @@ if 'helpers':
                 plr = PLAYERS[plr_index]
                 func = funcs[plr_index].play
                 stat = get_params(plr_index)
-                storage = storages[plr_index]
+                storage = STORAGE[plr_index]
 
                 # 执行AI并计时
                 try:
@@ -423,9 +424,8 @@ if 'helpers':
                     return res
 
                 # 记录log
-                storages[plr_index]['log'].append(get_params(plr_index))
-                storages[1 - plr_index]['log'].append(
-                    get_params(1 - plr_index))
+                STORAGE[plr_index]['log'].append(get_params(plr_index))
+                STORAGE[1 - plr_index]['log'].append(get_params(1 - plr_index))
                 frame = get_params()
                 FRAME_FUNC(frame)  # 帧处理函数接口
                 LOG_PUBLIC.append(frame)
@@ -460,6 +460,8 @@ def match(name1, plr1, name2, plr2, k=9, h=15, max_turn=50, max_time=5):
                 返回操作符（left，right，None）
             （可选）load函数：
                 接收初始的游戏存储，进行初始化
+            （可选）summary函数：
+                一局对决结束后接收游戏存储，总结比赛
             详见AI_Template.pdf
         name2 - 玩家2名称
         plr2 - 玩家2代码文件
@@ -488,6 +490,14 @@ def match(name1, plr1, name2, plr2, k=9, h=15, max_turn=50, max_time=5):
     TURNS = [MAX_TURNS] * 2
     TIMES = [MAX_TIME] * 2
 
+    #初始化双方存储空间
+    global STORAGE
+    STORAGE = [{
+        'size': (WIDTH, HEIGHT),
+        'log': [],
+        'memory': MEMORY[i]
+    } for i in range(2)]
+
     # 建立空log列表
     global LOG_PUBLIC
     frame = get_params()
@@ -506,6 +516,12 @@ def match(name1, plr1, name2, plr2, k=9, h=15, max_turn=50, max_time=5):
         scores = count_score()
         winner = 0 if scores[0] > scores[1] else 1 if scores[0] < scores[1] else None
         match_result = (winner, match_result[1], scores)
+
+    # 双方总结比赛
+    if 'summary' in dir(plr1):
+        plr1.summary(match_result[:2], STORAGE[0])
+    if 'summary' in dir(plr2):
+        plr2.summary(match_result[:2], STORAGE[1])
 
     # 生成对局记录对象
     return {

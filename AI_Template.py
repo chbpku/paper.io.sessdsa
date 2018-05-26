@@ -35,3 +35,29 @@ def load(storage):
         storage - 游戏存储，初始只包含size关键字内容
     '''
     pass
+
+
+def summary(match_result, storage):
+    '''
+    对局总结函数
+    可将总结内容记录于storage['memory']关键字的字典中，内容将会保留
+
+    params:
+        match_result - 对局结果
+            长度为2的元组，记录了本次对局的结果
+            [0] - 胜者
+                0 - 先手玩家胜
+                1 - 后手玩家胜
+                None - 平局
+            [1] - 胜负原因
+                0 - 撞墙
+                1 - 纸带碰撞
+                2 - 侧碰
+                3 - 正碰，结算得分
+                4 - 领地内互相碰撞
+                -1 - AI函数报错
+                -2 - 超时
+                -3 - 回合数耗尽，结算得分
+        storage - 游戏存储，初始只包含size关键字内容
+    '''
+    pass
