@@ -478,8 +478,8 @@ if 'widget':
     solo_frame.pack(padx=5, fill=X)
     width_set = checked_entry(solo_frame, int, 51, '场地半宽：')
     height_set = checked_entry(solo_frame, int, 101, '场地高：')
-    turns_set = checked_entry(solo_frame, int, 1000, '最大回合数：')
-    time_set = checked_entry(solo_frame, float, 0.1, '总计思考时间：')
+    turns_set = checked_entry(solo_frame, int, 2000, '最大回合数：')
+    time_set = checked_entry(solo_frame, float, 30, '总计思考时间：')
     Button(
         solo_frame, text='SOLO!', command=run_match).pack(
             side=LEFT, fill=Y, pady=[5, 0], padx=5)
