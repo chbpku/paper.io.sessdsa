@@ -7,6 +7,9 @@
 
 课程网站：[【数据结构与算法Python版】](http://gis4g.pku.edu.cn/course/pythonds)
 
+## 比赛参数公告
+### __建议先用棋盘大小102*101（k=51,h=101)，每局2000个回合，每局时限30秒__
+
 ## 文件说明
 - README.md：本文件
 - LICENSE：授权文件GPL 3.0
