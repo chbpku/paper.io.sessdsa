@@ -3,7 +3,7 @@ from tkinter.filedialog import askopenfilename, askdirectory
 from tkinter.messagebox import showerror
 from time import perf_counter as pf
 from colorsys import hsv_to_rgb
-import os, sys, pickle
+import os, sys, pickle, traceback
 
 from match_core import match
 
@@ -383,6 +383,7 @@ if 'display funcs':
             return '玩家%s在领地内被对手撞击，获得胜利\n' % s
 
         if rtype == -1:
+            print(match.DEBUG_TRACEBACK)
             return '由于玩家%s函数报错(%s: %s)，\n玩家%s获得胜利' % (f,
                                                       type(result[2]).__name__,
                                                       result[2], s)

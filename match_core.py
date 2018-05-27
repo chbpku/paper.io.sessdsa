@@ -1,7 +1,7 @@
 from time import perf_counter as pf
 from random import randrange
 from threading import Thread
-import pickle, os
+import pickle, os, traceback
 
 __doc__ = '''比赛逻辑
 
@@ -100,8 +100,9 @@ if 'global params':
     STORAGE = [None] * 2
     MEMORY = [{}, {}]
 
-    # 处理每回合状态函数接口
-    FRAME_FUNC = NULL
+    # 调试用接口
+    FRAME_FUNC = NULL  # 逐帧处理函数接口
+    # match.DEBUG_TRACEBACK - 作为报错输出存储变量
 
 
 # 玩家对象执行游戏逻辑
@@ -380,6 +381,8 @@ if 'helpers':
             except TimeOut:
                 return (1 - plr_index, -2)
             except Exception as e:
+                global DEBUG_TRACEBACK
+                DEBUG_TRACEBACK = traceback.format_exc()
                 return (1 - plr_index, -1, e)
 
             TIMES[plr_index] -= timecost
@@ -402,6 +405,7 @@ if 'helpers':
                 except TimeOut:  # 超时
                     return (1 - plr_index, -2)
                 except Exception as e:  # AI函数报错
+                    match.DEBUG_TRACEBACK = traceback.format_exc()
                     return (1 - plr_index, -1, e)
 
                 # 更新剩余回合数、用时
