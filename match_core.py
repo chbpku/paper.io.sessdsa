@@ -284,18 +284,29 @@ class player:
 # 辅助函数
 if 'helpers':
 
-    def init_field(k, h):
+    def init_field(k, h, max_turn, max_time):
         '''
         初始化比赛场地
 
         params:
             k - 场地半宽
             h - 场地高度
+            max_turn - 总回合数（双方各行动一次为一回合）
+            max_time - 总思考时间（秒）
         '''
         # 初始化场地
-        global BANDS, FIELDS
+        global WIDTH, HEIGHT, BANDS, FIELDS
+        WIDTH = k * 2
+        HEIGHT = h
         BANDS = [[None] * HEIGHT for i in range(WIDTH)]
         FIELDS = [[None] * HEIGHT for i in range(WIDTH)]
+
+        # 初始化最大回合数、思考时间
+        global MAX_TIME, MAX_TURNS, TURNS, TIMES
+        MAX_TIME = max_time
+        MAX_TURNS = max_turn
+        TURNS = [MAX_TURNS] * 2
+        TIMES = [MAX_TIME] * 2
 
         # 初始化玩家
         PLAYERS[0] = player(1, k // 2 + randrange(-3, 4),
@@ -364,8 +375,6 @@ if 'helpers':
                 -2 - 超时
                 -3 - 回合数耗尽，结算得分
         '''
-        t1, t2, action = 0, 0, None  # 在字典提前初始化计时变量、存放操作结果变量，去除新建变量耗时因素
-
         # 双方初始化环境
         for plr_index in (0, 1):
             # 为未声明load函数分配默认值
@@ -453,7 +462,7 @@ if 'helpers':
 
 
 # 主函数
-def match(name1, plr1, name2, plr2, k=9, h=15, max_turn=50, max_time=5):
+def match(name1, plr1, name2, plr2, k=51, h=101, max_turn=2000, max_time=30):
     '''
     一次比赛
     params:
@@ -481,20 +490,10 @@ def match(name1, plr1, name2, plr2, k=9, h=15, max_turn=50, max_time=5):
             log : 对局记录
             result : 对局结果，详见parse_match函数注释
     '''
-    # 初始化对局场地
-    global WIDTH, HEIGHT
-    WIDTH = k * 2
-    HEIGHT = h
-    init_field(k, h)
+    # 初始化比赛环境
+    init_field(k, h, max_turn, max_time)
 
-    # 初始化最大回合数、思考时间
-    global MAX_TIME, MAX_TURNS, TURNS, TIMES
-    MAX_TIME = max_time
-    MAX_TURNS = max_turn
-    TURNS = [MAX_TURNS] * 2
-    TIMES = [MAX_TIME] * 2
-
-    #初始化双方存储空间
+    # 初始化双方存储空间
     global STORAGE
     STORAGE = [{
         'size': (WIDTH, HEIGHT),
