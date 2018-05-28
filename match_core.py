@@ -377,11 +377,12 @@ if 'helpers':
         '''
         # 双方初始化环境
         for plr_index in (0, 1):
-            # 为未声明load函数分配默认值
-            try:
-                func = funcs[plr_index].load
-            except AttributeError:
-                func = NULL
+            # 未声明load函数则跳过
+            if not load in dir(funcs[plr_index]):
+                continue
+
+            # 准备输入参数
+            func = funcs[plr_index].load
             storage = STORAGE[plr_index]
 
             # 运行装载函数并计时
@@ -390,8 +391,7 @@ if 'helpers':
             except TimeOut:
                 return (1 - plr_index, -2)
             except Exception as e:
-                global DEBUG_TRACEBACK
-                DEBUG_TRACEBACK = traceback.format_exc()
+                match.DEBUG_TRACEBACK = traceback.format_exc()
                 return (1 - plr_index, -1, e)
 
             TIMES[plr_index] -= timecost
@@ -522,9 +522,15 @@ def match(name1, plr1, name2, plr2, k=51, h=101, max_turn=2000, max_time=30):
 
     # 双方总结比赛
     if 'summary' in dir(plr1):
-        plr1.summary(match_result[:2], STORAGE[0])
+        try:
+            plr1.summary(match_result[:2], STORAGE[0])
+        except:
+            pass
     if 'summary' in dir(plr2):
-        plr2.summary(match_result[:2], STORAGE[1])
+        try:
+            plr2.summary(match_result[:2], STORAGE[1])
+        except:
+            pass
 
     # 生成对局记录对象
     return {
