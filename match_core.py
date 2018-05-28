@@ -378,7 +378,7 @@ if 'helpers':
         # 双方初始化环境
         for plr_index in (0, 1):
             # 未声明load函数则跳过
-            if not load in dir(funcs[plr_index]):
+            if 'load' not in dir(funcs[plr_index]):
                 continue
 
             # 准备输入参数
@@ -515,7 +515,7 @@ def match(name1, plr1, name2, plr2, k=51, h=101, max_turn=2000, max_time=30):
         LOG_PUBLIC.append(frame)
 
     # 如果平手则统计得分
-    if abs(match_result[1]) == 3:
+    if match_result[0] is None:
         scores = count_score()
         winner = 0 if scores[0] > scores[1] else 1 if scores[0] < scores[1] else None
         match_result = (winner, match_result[1], scores)
