@@ -364,8 +364,8 @@ if 'helpers':
             res['band_route'] = list(
                 map(lambda plr: plr.band_direction[:], PLAYERS))
         else:
-            res['me'] = res['players'][i]
-            res['enemy'] = res['players'][1 - i]
+            res['me'] = res['players'][curr_plr]
+            res['enemy'] = res['players'][1 - curr_plr]
         return res
 
     def parse_match(funcs):
