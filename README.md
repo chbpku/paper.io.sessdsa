@@ -20,8 +20,8 @@
 - visualize_console.py：控制台复盘代码（配套说明md文件）
 - roundRobin.py：循环赛代码
 - [AI]：一些示例AI
-- AI_Template.py：AI编写模板（配套说明docx文件）
-- paper_io_20180522_020800.pdf：说明文档
+- AI_Template.py：AI编写模板（配套说明pdf文件）
+- paper_io_20180522.pdf：说明文档
 - solo.py：自定义比赛与记录回放工具
 - UPDATE.py：更新工具
 
