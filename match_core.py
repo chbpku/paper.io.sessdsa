@@ -81,9 +81,6 @@ if 'timeout':
 
 # 参数
 if 'global params':
-    # 未声明可选函数时的默认值
-    NULL = lambda storage: None
-
     # 待初始化时间参数
     MAX_TURNS = None  # 最大回合数（双方各操作一次为一回合）
     MAX_TIME = None  # 总思考时间（秒）
@@ -100,7 +97,9 @@ if 'global params':
     STORAGE = [None] * 2
     MEMORY = [{}, {}]
 
-    # 调试用接口
+    # 其它
+    LOG_PUBLIC = None  # 全局比赛记录列表
+    NULL = lambda storage: None  # 空函数
     FRAME_FUNC = NULL  # 逐帧处理函数接口
     # match.DEBUG_TRACEBACK - 作为报错输出存储变量
 
@@ -309,10 +308,23 @@ if 'helpers':
         TIMES = [MAX_TIME] * 2
 
         # 初始化玩家
-        PLAYERS[0] = player(1, k // 2 + randrange(-3, 4),
-                            h // 2 + randrange(-3, 4))
-        PLAYERS[1] = player(2, k + k // 2 + randrange(-3, 4),
-                            h // 2 + randrange(-3, 4))
+        for i in range(2):
+            PLAYERS[i] = player(i + 1, k * i + k // 2 + randrange(-3, 4),
+                                h // 2 + randrange(-3, 4))
+
+        # 初始化存储空间
+        for i in range(2):
+            STORAGE[i] = {
+                'size': (WIDTH, HEIGHT),
+                'log': [get_params(i)],
+                'memory': MEMORY[i]
+            }
+
+        # 建立全局比赛记录
+        global LOG_PUBLIC
+        frame = get_params()
+        FRAME_FUNC(frame)
+        LOG_PUBLIC = [frame]
 
     def get_params(curr_plr=None):
         '''
@@ -375,6 +387,9 @@ if 'helpers':
                 -2 - 超时
                 -3 - 回合数耗尽，结算得分
         '''
+        # 提取传给双方的初始场景
+        frames = [s['log'][-1] for s in STORAGE]
+
         # 双方初始化环境
         for plr_index in (0, 1):
             # 未声明load函数则跳过
@@ -404,7 +419,7 @@ if 'helpers':
                 # 获取当前玩家、AI、游戏信息、存储空间
                 plr = PLAYERS[plr_index]
                 func = funcs[plr_index].play
-                stat = get_params(plr_index)
+                stat = frames[plr_index]
                 storage = STORAGE[plr_index]
 
                 # 执行AI并计时
@@ -436,9 +451,12 @@ if 'helpers':
                 if res:
                     return res
 
-                # 记录log
-                STORAGE[plr_index]['log'].append(get_params(plr_index))
-                STORAGE[1 - plr_index]['log'].append(get_params(1 - plr_index))
+                # 双方玩家比赛记录
+                for i in range(2):
+                    frames[i] = get_params(i)
+                    STORAGE[i]['log'].append(frames[i])
+
+                # 全局比赛记录
                 frame = get_params()
                 FRAME_FUNC(frame)  # 帧处理函数接口
                 LOG_PUBLIC.append(frame)
@@ -492,20 +510,6 @@ def match(name1, plr1, name2, plr2, k=51, h=101, max_turn=2000, max_time=30):
     '''
     # 初始化比赛环境
     init_field(k, h, max_turn, max_time)
-
-    # 初始化双方存储空间
-    global STORAGE
-    STORAGE = [{
-        'size': (WIDTH, HEIGHT),
-        'log': [],
-        'memory': MEMORY[i]
-    } for i in range(2)]
-
-    # 建立空log列表
-    global LOG_PUBLIC
-    frame = get_params()
-    FRAME_FUNC(frame)
-    LOG_PUBLIC = [frame]
 
     # 运行比赛，并记录终局场景
     match_result = parse_match((plr1, plr2))
@@ -576,41 +580,10 @@ def match_with_log(*args, **kwargs):
 
 
 if __name__ == '__main__':
-    # floodfill压力测试
-    from random import *
-    from time import perf_counter as pf
 
-    k = 301
-    h = 101
+    class null_plr:
+        def play(self, stat, storage):
+            print(stat.keys())
+            return 'lr' [randrange(2)]
 
-    # 初始化对局场地
-    WIDTH = k * 2
-    HEIGHT = h
-    init_field(k, h)
-
-    # 随机色块
-    for x in range(WIDTH):
-        for y in range(HEIGHT):
-            if randrange(2) == 1:
-                FIELDS[x][y] = 1
-    print('generate done')
-    print(count_score())
-    for y in range(20):
-        res = ''
-        for x in range(150):
-            res += '+' if FIELDS[x][y] == 1 else ' '
-        print(res)
-
-    PLAYERS[0].field_border = [0, WIDTH - 1, 0, HEIGHT - 1]
-
-    t1 = pf()
-    PLAYERS[0].check_field_fill()
-    t2 = pf()
-
-    print(t2 - t1)
-    print(count_score())
-    for y in range(20):
-        res = ''
-        for x in range(150):
-            res += '+' if FIELDS[x][y] == 1 else ' '
-        print(res)
+    match('t1', null_plr(), 't2', null_plr())

@@ -29,10 +29,10 @@ def load(storage):
     '''
     初始化函数，向storage中声明必要的初始参数
     若该函数未声明将使用lambda storage:None替代
-    初始状态storage为：{'size': (WIDTH, HEIGHT), 'log': []}
+    初始状态storage为：{'size': (WIDTH, HEIGHT), 'log': [开局游戏状态], 'memory': {*跨比赛存储的内容*}}
 
     params:
-        storage - 游戏存储，初始只包含size关键字内容
+        storage - 游戏存储
     '''
     pass
 
@@ -58,6 +58,6 @@ def summary(match_result, storage):
                 -1 - AI函数报错
                 -2 - 超时
                 -3 - 回合数耗尽，结算得分
-        storage - 游戏存储，初始只包含size关键字内容
+        storage - 游戏存储
     '''
     pass
