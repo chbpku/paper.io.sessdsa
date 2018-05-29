@@ -70,7 +70,7 @@ if 'timeout':
         t2 = pf()
 
         # 若超时则报错，否则返回消耗时间
-        if thread.is_alive():
+        if thread.is_alive() or t2 - t1 >= timeleft:
             raise TimeOut()
 
         # 返回函数结果或抛出异常
@@ -410,8 +410,6 @@ if 'helpers':
                 return (1 - plr_index, -1, e)
 
             TIMES[plr_index] -= timecost
-            if TIMES[plr_index] <= 0:
-                return (1 - plr_index, -2)
 
         # 执行游戏逻辑
         for i in range(MAX_TURNS):
@@ -435,8 +433,6 @@ if 'helpers':
                 # 更新剩余回合数、用时
                 TURNS[plr_index] -= 1
                 TIMES[plr_index] -= timecost
-                if TIMES[plr_index] <= 0:
-                    return (1 - plr_index, -2)
 
                 # 根据操作符转向
                 if isinstance(action, str) and len(action) > 0:
@@ -583,7 +579,9 @@ if __name__ == '__main__':
 
     class null_plr:
         def play(self, stat, storage):
-            print(stat.keys())
-            return 'lr' [randrange(2)]
+            return 'l'
 
+    t1 = pf()
     match('t1', null_plr(), 't2', null_plr())
+    t2 = pf()
+    print(t2 - t1)
