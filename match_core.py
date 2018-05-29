@@ -360,12 +360,12 @@ if 'helpers':
         res['fields'] = [l.copy() for l in FIELDS]
         res['bands'] = [l.copy() for l in BANDS]
         res['players'] = list(map(player.get_info, PLAYERS))
-        if curr_plr is not None:
-            res['me'] = PLAYERS[curr_plr].get_info()
-            res['enemy'] = PLAYERS[1 - curr_plr].get_info()
-        else:
+        if curr_plr is None:
             res['band_route'] = list(
                 map(lambda plr: plr.band_direction[:], PLAYERS))
+        else:
+            res['me'] = res['players'][i]
+            res['enemy'] = res['players'][1 - i]
         return res
 
     def parse_match(funcs):
