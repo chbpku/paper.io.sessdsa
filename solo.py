@@ -190,6 +190,7 @@ if 'classes':
             if self.size == size:
                 return
             self.size = size
+            self.names = None
 
             # 计算网格宽度
             self.grid = int(min(MAX_W / self.size[0], MAX_H / self.size[1]))
@@ -420,8 +421,8 @@ if 'race funcs':
             with open(log_path, 'rb') as file:
                 log = pickle.load(file)
         except Exception as e:
-            showerror('%s: %s' % (os.path.split()[1], type(e).__name__),
-                      str(e))
+            showerror('%s: %s' % (os.path.split(log_path)[1],
+                                  type(e).__name__), str(e))
             return
         display.load_match_result(log)
 
