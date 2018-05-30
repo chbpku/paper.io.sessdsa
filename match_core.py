@@ -312,25 +312,42 @@ if 'helpers':
             PLAYERS[i] = player(i + 1, k * i + k // 2 + randrange(-3, 4),
                                 h // 2 + randrange(-3, 4))
 
+        # 创建初始场景拷贝
+        f, b = field_copy()
+
         # 初始化存储空间
         for i in range(2):
             STORAGE[i] = {
                 'size': (WIDTH, HEIGHT),
-                'log': [get_params(i)],
+                'log': [get_params(f, b, i)],
                 'memory': MEMORY[i]
             }
 
         # 建立全局比赛记录
         global LOG_PUBLIC
-        frame = get_params()
+        frame = get_params(f, b)
         FRAME_FUNC(frame)
         LOG_PUBLIC = [frame]
 
-    def get_params(curr_plr=None):
+    def field_copy():
+        '''
+        创建比赛场地的拷贝（元组）
+
+        returns:
+            [0] - FIELDS拷贝
+            [1] - BANDS拷贝
+        '''
+        f = tuple(tuple(i) for i in FIELDS)
+        b = tuple(tuple(i) for i in BANDS)
+        return f, b
+
+    def get_params(fields, bands, curr_plr=None):
         '''
         生成传给AI函数的参数结构
 
         params:
+            fields - 纸片信息元组
+            bands - 纸带信息元组
             curr_plr - 当前玩家编号（0或1）
 
         return:
@@ -355,14 +372,14 @@ if 'helpers':
                 band_route : 双方纸带行进方向
         '''
         res = {}
-        res['turnleft'] = TURNS[:]
-        res['timeleft'] = TIMES[:]
-        res['fields'] = [l.copy() for l in FIELDS]
-        res['bands'] = [l.copy() for l in BANDS]
+        res['turnleft'] = tuple(TURNS)
+        res['timeleft'] = tuple(TIMES)
+        res['fields'] = fields
+        res['bands'] = bands
         res['players'] = list(map(player.get_info, PLAYERS))
         if curr_plr is None:
             res['band_route'] = list(
-                map(lambda plr: plr.band_direction[:], PLAYERS))
+                map(lambda plr: tuple(plr.band_direction), PLAYERS))
         else:
             res['me'] = res['players'][curr_plr]
             res['enemy'] = res['players'][1 - curr_plr]
@@ -447,13 +464,16 @@ if 'helpers':
                 if res:
                     return res
 
+                # 拷贝场景
+                f, b = field_copy()
+
                 # 双方玩家比赛记录
                 for i in range(2):
-                    frames[i] = get_params(i)
+                    frames[i] = get_params(f, b, i)
                     STORAGE[i]['log'].append(frames[i])
 
                 # 全局比赛记录
-                frame = get_params()
+                frame = get_params(f, b)
                 FRAME_FUNC(frame)  # 帧处理函数接口
                 LOG_PUBLIC.append(frame)
 
@@ -465,7 +485,7 @@ if 'helpers':
         统计场上面积数，用于评判胜负
 
         return:
-            长度为2的列表，分别记录双方面积数
+            长度为2的元组，分别记录双方面积数
         '''
         res = [0, 0]
         for x in range(WIDTH):
@@ -510,7 +530,7 @@ def match(name1, plr1, name2, plr2, k=51, h=101, max_turn=2000, max_time=30):
     # 运行比赛，并记录终局场景
     match_result = parse_match((plr1, plr2))
     if match_result[1] >= 0:
-        frame = get_params()
+        frame = get_params(*field_copy())
         FRAME_FUNC(frame)
         LOG_PUBLIC.append(frame)
 
