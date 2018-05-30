@@ -3,7 +3,7 @@ from tkinter.filedialog import askopenfilename, askdirectory
 from tkinter.messagebox import showerror
 from time import perf_counter as pf
 from colorsys import hsv_to_rgb
-import os, sys, pickle, traceback
+import os, sys, pickle, traceback, importlib
 
 from match_core import match
 
@@ -47,13 +47,22 @@ if 'classes':
         def get_player(self):
             fullpath = self.path_var.get()
             if not fullpath:
-                raise Exception('请选择文件')
-            folder, filename = os.path.split(fullpath)
-            if folder:
-                sys.path.append(folder)
-            name = filename[:-3]
-            func = __import__(name)
+                raise AttributeError('请选择文件')
+
+            # 名称
+            name = os.path.basename(fullpath)
+            if not name.endswith('.py'):
+                raise TypeError('AI代码需为py文件')
+            name = name[:-3]
+
+            # 内容
+            class func:
+                with open(fullpath) as f:
+                    exec(f.read())
+
             func.play  # 检查play函数是否存在
+
+            # 返回
             return name, func
 
     # 定义合法输入类
@@ -141,7 +150,6 @@ if 'classes':
         def scroll_option(self, *args):
             if len(self.frame_seq) < 2:
                 return
-            print(args)
 
             # 暂停播放
             if self.playing_status:
@@ -212,7 +220,7 @@ if 'classes':
         def _init_screen(self):
             '''初始化显示相关组件'''
             # 窗口控件
-            self.cv = Canvas(self.root, highlightthickness=0, height=100)
+            self.cv = Canvas(self.root, highlightthickness=0, height=0)
             self.cv_size = None
             self.cv.pack(padx=MARGIN_WIDTH, pady=MARGIN_WIDTH)
 
@@ -226,35 +234,46 @@ if 'classes':
 
         def _setup_grid(self, size):
             '''设置屏幕网格'''
-            if self.size == size:
-                return
-            self.size = size
-            self.names = None
+            if self.size != size:
+                self.size = size
 
-            # 计算网格宽度
-            self.grid = int(min(MAX_W / self.size[0], MAX_H / self.size[1]))
-            self.grid = max(6, min(200, self.grid))
+                # 计算网格宽度
+                self.grid = int(
+                    min(MAX_W / self.size[0], MAX_H / self.size[1]))
+                self.grid = max(6, min(200, self.grid))
 
-            # 设置画布大小及边框大小
-            self.cv.config(
-                width=PADDING_WIDTH * 2 + size[0] * self.grid,
-                height=PADDING_WIDTH * 2 + size[1] * self.grid)
-            self.cv.create_rectangle(
-                (0, 0, int(self.cv['width']) - 1, int(self.cv['height']) - 1),
-                outline='black')
+                # 设置画布大小及边框大小
+                self.cv.config(
+                    width=PADDING_WIDTH * 2 + size[0] * self.grid,
+                    height=PADDING_WIDTH * 2 + size[1] * self.grid)
+                self.cv.delete('all')
+                self.cv.create_rectangle(
+                    (0, 0, int(self.cv['width']) - 1,
+                     int(self.cv['height']) - 1),
+                    outline='black')
 
-            # 排布网格
-            self.pixels = []
-            for x in range(size[0]):
-                col = []
-                for y in range(size[1]):
-                    sx, sy = PADDING_WIDTH + x * self.grid, PADDING_WIDTH + y * self.grid
-                    pixel = self.cv.create_rectangle(
-                        (sx, sy, sx + self.grid, sy + self.grid),
-                        fill='',
-                        outline='')
-                    col.append(pixel)
-                self.pixels.append(col)
+                # 排布网格
+                self.pixels = []
+                for x in range(size[0]):
+                    col = []
+                    for y in range(size[1]):
+                        sx, sy = PADDING_WIDTH + x * self.grid, PADDING_WIDTH + y * self.grid
+                        pixel = self.cv.create_rectangle(
+                            (sx, sy, sx + self.grid, sy + self.grid),
+                            fill='',
+                            outline='')
+                        col.append(pixel)
+                    self.pixels.append(col)
+
+                # 设置默认帧
+                self.default_frame = {
+                    'fields':
+                    [[None] * self.size[1] for i in range(self.size[0])]
+                }
+                self.last_frame = None
+
+            # 清空屏幕
+            self._clear()
 
             # 更新窗口显示
             self.root.update()
@@ -263,6 +282,7 @@ if 'classes':
             '''根据玩家名生成颜色主题'''
             if names == self.names:
                 return
+
             self.names = names
             self.cv.delete('players')
 
@@ -293,8 +313,19 @@ if 'classes':
                     tag='players') for i in (0, 1)
             ]
 
-            # 重置帧
-            self.last_frame = None
+        def _clear(self):
+            '''清空屏幕'''
+            if not self.last_frame:
+                self.last_frame = self.default_frame
+                return
+
+            for x in range(self.size[0]):
+                for y in range(self.size[1]):
+                    if self.last_frame['fields'][x][y] is not None:
+                        self.cv.itemconfig(
+                            self.pixels[x][y], fill=self.root['bg'])
+
+            self.last_frame = self.default_frame
 
         def _update_screen(self, cur_frame):
             '''更新一帧内容'''
@@ -302,8 +333,7 @@ if 'classes':
             for x in range(self.size[0]):
                 for y in range(self.size[1]):
                     content = cur_frame['fields'][x][y]
-                    if self.frame_index and self.last_frame and \
-                            content == self.last_frame['fields'][x][y]:
+                    if content == self.last_frame['fields'][x][y]:
                         continue
                     color = self.root['bg'] if content is None \
                                 else self.colors[content - 1]
