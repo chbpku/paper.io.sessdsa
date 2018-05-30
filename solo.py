@@ -57,7 +57,7 @@ if 'classes':
 
             # 内容
             class func:
-                with open(fullpath) as f:
+                with open(fullpath, encoding='utf-8', errors='ignore') as f:
                     exec(f.read())
 
             func.play  # 检查play函数是否存在
