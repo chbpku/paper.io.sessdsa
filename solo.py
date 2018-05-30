@@ -104,33 +104,71 @@ if 'classes':
             self.button1.pack(side=LEFT)
             self.playing_status = 0
 
-            # 信息栏
-            self.info = StringVar(value='选择双方AI文件后点击“SOLO”按钮开始比赛')
-            Label(
-                self.panel, textvariable=self.info,
-                justify=LEFT).pack(anchor=W)
+            # 拖动条
+            self.scroll = Scrollbar(
+                self.panel, orient=HORIZONTAL, command=self.scroll_option)
+            self.scroll.pack(fill=X, padx=(5, 0), pady=(5, 0))
 
             # 显示接口
             self._init_screen()
 
+            # 信息栏
+            self.info = StringVar(value='选择双方AI文件后点击“SOLO”按钮开始比赛')
+            Label(
+                self.root, textvariable=self.info,
+                justify=LEFT).pack(anchor=W)
+
         def button1_press(self):
             '''播放按钮函数'''
-            # 开始播放
-            if self.playing_status == 0:
-                self.button1['text'] = '暂停'
-                self.playing_status = 1
 
             # 暂停播放
-            elif self.playing_status == 1:
+            if self.playing_status:
                 self.button1['text'] = '播放'
                 self.playing_status = 0
 
             # 播放重启
-            elif self.playing_status == -1:
+            elif self.frame_index >= len(self.frame_seq) - 1:
                 self.button1['text'] = '播放'
                 self.playing_status = 0
                 self.frame_index = 0
                 self._update_screen(self.frame_seq[0])
+
+            # 开始播放
+            else:
+                self.button1['text'] = '暂停'
+                self.playing_status = 1
+
+        def scroll_option(self, *args):
+            if len(self.frame_seq) < 2:
+                return
+            print(args)
+
+            # 暂停播放
+            if self.playing_status:
+                self.button1_press()
+
+            # 逐帧移动
+            if args[0] == 'scroll':
+                if args[1] == '1':
+                    self.frame_index = min(
+                        len(self.frame_seq) - 1, self.frame_index + 1)
+                else:
+                    self.frame_index = max(0, self.frame_index - 1)
+
+            # 拖动
+            elif args[0] == 'moveto':
+                self.frame_index = int(
+                    (len(self.frame_seq) - 1) * float(args[1]))
+
+            # 更新画面与拖动条
+            self._update_screen(self.frame_seq[self.frame_index])
+            self.scroll_update()
+
+        def scroll_update(self):
+            if len(self.frame_seq) < 2:
+                return
+            pos = self.frame_index / (len(self.frame_seq) - 1)
+            self.scroll.set(pos, pos)
 
         def update(self):
             '''实时更新显示，实现逐帧播放效果'''
@@ -141,10 +179,11 @@ if 'classes':
                 self.old_timer = curr_time
                 self.frame_index += 1
                 self._update_screen(self.frame_seq[self.frame_index])
+                self.scroll_update()
 
                 # 一次循环播放结束
                 if self.frame_index == len(self.frame_seq) - 1:
-                    self.playing_status = -1
+                    self.playing_status = 0
                     self.button1['text'] = '重置'
 
         def load_match_result(self, log, init=True):
@@ -384,7 +423,10 @@ if 'display funcs':
             return '玩家%s在领地内被对手撞击，获得胜利\n' % s
 
         if rtype == -1:
-            print(match.DEBUG_TRACEBACK)
+            try:
+                print(match.DEBUG_TRACEBACK)
+            except:
+                pass
             return '由于玩家%s函数报错(%s: %s)，\n玩家%s获得胜利' % (f,
                                                       type(result[2]).__name__,
                                                       result[2], s)

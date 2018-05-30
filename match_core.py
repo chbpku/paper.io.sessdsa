@@ -164,6 +164,7 @@ class player:
 
         # 边缘检测
         if self.x < 0 or self.x >= WIDTH or self.y < 0 or self.y >= HEIGHT:
+            self.band_direction.append(self.direction)
             return 2 - self.id, 0  # 撞墙死
 
         # 更新占有区域边界
