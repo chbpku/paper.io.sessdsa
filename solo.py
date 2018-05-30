@@ -236,6 +236,7 @@ if 'classes':
             '''设置屏幕网格'''
             if self.size != size:
                 self.size = size
+                self.names = None
 
                 # 计算网格宽度
                 self.grid = int(
