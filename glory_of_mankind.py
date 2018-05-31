@@ -45,8 +45,11 @@ if 'players':
 
         def play(stat, storage):
             sleep(human_control.delay)
-            res, human_control.op = human_control.op, None
-            return res
+            if human_control.op is not None:
+                op = (human_control.op - stat['me']['direction'] + 4) % 4
+                res = ' R L' [op]
+                human_control.op = None
+                return res
 
     AI_NAME = '默认AI'
     AI_MODULE = null_AI
@@ -109,7 +112,10 @@ if 'race funcs':
             showerror(type(e).__name__, str(e))
 
         for w in OP_WIDGETS:
-            w['state'] = ACTIVE
+            try:
+                w['state'] = ACTIVE
+            except:
+                w['state'] = NORMAL
 
     run_match.thread = Thread()
 
@@ -162,8 +168,8 @@ if 'display funcs':
             return '%s在领地内被对手撞击，获得胜利' % s
 
         if rtype == -1:
-            return '由于玩家%s函数报错(%s: %s)，%s获得胜利' % (f, type(result[2]).__name__,
-                                                  result[2], s)
+            return '由于%s函数报错(%s: %s)，%s获得胜利' % (f, type(result[2]).__name__,
+                                                result[2], s)
 
         if rtype == -2:
             return '由于%s决策时间耗尽，%s获得胜利' % (f, s)
@@ -192,19 +198,22 @@ if 'classes':
     class path_frame:
         def __init__(self, root, display_text):
             # 总布局框
-            self.frame = Frame(root)
-            self.frame.pack(padx=5, pady=[5, 0], fill=X)
-            Label(self.frame, text=display_text).pack(side=LEFT)
+            frame = Frame(root)
+            frame.pack(padx=5, pady=[5, 0], fill=X)
+            Label(frame, text=display_text).pack(side=LEFT)
 
             # 读取文件或设置输出目录
-            Button(
-                self.frame, text='浏览',
-                command=self.button_func).pack(side=RIGHT)
+            self.button = Button(frame, text='浏览', command=self.button_func)
+            self.button.pack(side=RIGHT)
 
             # 路径输入位置
             self.path_var = StringVar(value='')
-            self.entry = Entry(self.frame, textvariable=self.path_var)
+            self.entry = Entry(frame, textvariable=self.path_var)
             self.entry.pack(fill=X, pady=[3, 0])
+
+            # 记录于活动控件列表
+            OP_WIDGETS.append(self.button)
+            OP_WIDGETS.append(self.entry)
 
         def button_func(self):
             path = askdirectory()
@@ -218,13 +227,14 @@ if 'classes':
             self.default = default
             self.var = StringVar(value=default)
             Label(root, text=text).pack(side=LEFT)
-            Entry(
+            self.entry = Entry(
                 root,
                 width=5,
                 textvariable=self.var,
                 validate='key',
-                validatecommand=(self.check_valid, '%P')).pack(
-                    side=LEFT, pady=[3, 0])
+                validatecommand=(self.check_valid, '%P'))
+            self.entry.pack(side=LEFT, pady=[3, 0])
+            OP_WIDGETS.append(self.entry)
 
         def check_valid(self, s):
             if not s:
@@ -423,16 +433,19 @@ if 'input':
             showerror(type(e).__name__, str(e))
 
     # 绑定玩家输入
-    def turn_left(e):
-        human_control.op = 'l'
+    key_mapping = {39: 0, 68: 0, 40: 1, 83: 1, 37: 2, 65: 2, 38: 3, 87: 3}
 
-    def turn_right(e):
-        human_control.op = 'r'
+    def key_control(e):
+        key = e.keycode
+        if key in key_mapping:
+            human_control.op = key_mapping[key]
 
+    tk.bind('<KeyPress>', key_control)
 
 # 合成窗口
 if 'widgets':
-    OP_WIDGETS = []
+    OP_WIDGETS = []  # 开始游戏后失活的控件列表
+
     # 读取AI模块
     loading_frame = Frame(tk)
     loading_frame.pack(padx=5, pady=[5, 0], fill=X)
@@ -473,8 +486,6 @@ if 'widgets':
 
     # 显示窗口
     display = display_frame(tk)
-    display.cv.bind('<Button-1>', turn_left)
-    display.cv.bind('<Button-3>', turn_right)
 
     # 信息栏
     info = StringVar(value='人類に栄光あれ！')
