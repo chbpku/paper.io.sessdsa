@@ -1,15 +1,23 @@
 def play(stat, storage):
-    storage['cur'] += 1
-    if storage['cur'] >= storage['max']:
-        storage['cur'] = 0
-        storage['edges'] += 1
-        if storage['edges'] >= 3:
-            storage['edges'] = 0
-            storage['max'] += 1
-        return 'l'
+    core = storage['core']
+    return core.get_next()
 
 
-def load(storage):
-    storage['cur'] = 0
-    storage['max'] = 2
-    storage['edges'] = 0
+def load(stat, storage):
+    class square_loop:
+        def __init__(self):
+            self.cur = 0
+            self.max = 2
+            self.edges = 0
+
+        def get_next(self):
+            self.cur += 1
+            if self.cur >= self.max:
+                self.cur = 0
+                self.edges += 1
+                if self.edges >= 3:
+                    self.edges = 0
+                    self.max += 1
+                return 'l'
+
+    storage['core'] = square_loop()

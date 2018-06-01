@@ -1,5 +1,6 @@
 def play(stat, storage):
     from random import choice
+    stat=stat['now']
     me = stat['me']
     d = storage['directions'][me['direction']]
     if stat['fields'][me['x']][me['y']] == me['id']:
@@ -8,5 +9,6 @@ def play(stat, storage):
         return 'r'
     return 'l'
 
-def load(storage):
+
+def load(stat, storage):
     storage['directions'] = [(1, 0), (0, 1), (-1, 0), (0, -1)]
