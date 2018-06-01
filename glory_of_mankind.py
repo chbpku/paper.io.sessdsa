@@ -19,6 +19,8 @@ tk = Tk()
 tk.title('For the Glory of Mankind!')
 tk.geometry('+%d+0' % (tk.winfo_screenwidth() / 2 - 300))
 tk.resizable(0, 0)
+tk_left = Frame(tk)
+tk_left.pack(side=LEFT, fill=Y)
 
 # 玩家、默认AI模块
 if 'players':
@@ -429,7 +431,7 @@ if 'input':
             global AI_MODULE, AI_NAME
             AI_MODULE = load
             AI_NAME = name
-            AI_PATH.set('%s (%s)' % (name, path))
+            AI_PATH.set(name)
         except Exception as e:
             showerror(type(e).__name__, str(e))
 
@@ -448,7 +450,7 @@ if 'widgets':
     OP_WIDGETS = []  # 开始游戏后失活的控件列表
 
     # 读取AI模块
-    loading_frame = Frame(tk)
+    loading_frame = Frame(tk_left)
     loading_frame.pack(padx=5, pady=[5, 0], fill=X)
     AI_PATH = StringVar(value='默认AI (循环画正方形)')
     Label(loading_frame, text='AI: ').pack(side=LEFT)
@@ -458,18 +460,20 @@ if 'widgets':
     b.pack(side=RIGHT)
 
     # 比赛记录保存位置
-    log_dir = path_frame(tk, '比赛记录目录(留空则不记录)')
+    log_dir = path_frame(tk_left, '比赛记录目录(留空则不记录)')
 
     # 比赛设置与启动
     if 'match setting':
         # 比赛场地设置
-        setting_frame = Frame(tk)
+        setting_frame = Frame(tk_left)
         setting_frame.pack(padx=5, fill=X)
         width_set = checked_entry(setting_frame, int, 51, '场地半宽：')
         height_set = checked_entry(setting_frame, int, 101, '场地高：')
         turns_set = checked_entry(setting_frame, int, 2000, '最大回合数：')
 
         # 先后手
+        setting_frame = Frame(tk_left)
+        setting_frame.pack(padx=5, fill=X)
         player_first = IntVar(value=1)
         r = Radiobutton(
             setting_frame, text='玩家先手', variable=player_first, value=1)
@@ -490,7 +494,9 @@ if 'widgets':
 
     # 信息栏
     info = StringVar(value='人類に栄光あれ！')
-    Label(tk, textvariable=info, justify=LEFT).pack(padx=5, pady=5, anchor=W)
+    Label(
+        tk_left, textvariable=info, justify=LEFT).pack(
+            padx=5, pady=5, anchor=W)
 
 # 运行窗口
 tk.mainloop()

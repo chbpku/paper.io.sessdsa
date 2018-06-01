@@ -99,7 +99,7 @@ if 'classes':
 
     # 定义复盘显示框
     class display_frame:
-        def __init__(self, root):
+        def __init__(self, root, left_panel):
             self.root = root
             self.panel = Frame(root)
             self.panel.pack(padx=5, pady=5, fill=X)
@@ -124,8 +124,8 @@ if 'classes':
             # 信息栏
             self.info = StringVar(value='选择双方AI文件后点击“SOLO”按钮开始比赛')
             Label(
-                self.root, textvariable=self.info,
-                justify=LEFT).pack(anchor=W)
+                left_panel, textvariable=self.info, justify=LEFT).pack(
+                    anchor=W, padx=5)
 
         def button1_press(self):
             '''播放按钮函数'''
@@ -395,7 +395,7 @@ if 'display funcs':
         '''
         # 初始信息
         if index == 0:
-            return '对局共%d回合（%d步）\n先手玩家%s面朝%s；后手玩家%s面朝%s' % (\
+            return '对局共%d回合（%d步）\n先手玩家%s面朝%s\n后手玩家%s面朝%s' % (\
                 total//2, total, \
                 names[0], \
                 '东南西北' [slice['players'][0]['direction']], \
@@ -404,7 +404,7 @@ if 'display funcs':
             )
 
         # 步数
-        res = 'Step %d of %d: ' % (index, total)
+        res = 'Step %d of %d: \n' % (index, total)
 
         # 玩家信息
         plr_ind = index % 2 == 0
@@ -412,7 +412,7 @@ if 'display funcs':
         plr_movement = '东南西北' [slice['players'][plr_ind]['direction']]
 
         # 合成
-        return res + '玩家%s向%s移动.\n' % (plr_name, plr_movement)
+        return res + '玩家%s向%s移动.' % (plr_name, plr_movement)
 
     def end_text(names, result):
         '''
@@ -458,9 +458,8 @@ if 'display funcs':
                 print(match.DEBUG_TRACEBACK)
             except:
                 pass
-            return '由于玩家%s函数报错(%s: %s)，\n玩家%s获得胜利' % (f,
-                                                      type(result[2]).__name__,
-                                                      result[2], s)
+            return '由于玩家%s函数报错\n(%s: %s)\n玩家%s获得胜利' % (
+                f, type(result[2]).__name__, result[2], s)
 
         if rtype == -2:
             return '由于玩家%s决策时间耗尽，\n玩家%s获得胜利' % (f, s)
@@ -468,7 +467,7 @@ if 'display funcs':
         pre = '玩家正碰' if rtype == 3 else '回合数耗尽'
         scores = (('%s: %d' % pair) for pair in zip(names, result[2]))
         res = '平局' if result[0] is None else ('玩家%s获胜' % s)
-        return '%s，双方得分分别为：%s\n%s' % (pre, '; '.join(scores), res)
+        return '%s，双方得分分别为：\n%s\n%s' % (pre, '\n'.join(scores), res)
 
     def gen_color_text(h, s, v):
         '''
@@ -542,25 +541,31 @@ if 'widget':
     tk.geometry('+%d+0' % (tk.winfo_screenwidth() / 2 - 300))
     tk.resizable(0, 0)
 
+    # 左侧控制栏
+    tk_left = Frame(tk)
+    tk_left.pack(side=LEFT, fill=Y)
+
     # 文件读取模块
-    plr1_dir = file_frame(tk, '玩家1代码路径', True)
-    plr2_dir = file_frame(tk, '玩家2代码路径', True)
-    log_dir = file_frame(tk, '输出目录（留空则不记录）', False)
+    plr1_dir = file_frame(tk_left, '玩家1代码路径', True)
+    plr2_dir = file_frame(tk_left, '玩家2代码路径', True)
+    log_dir = file_frame(tk_left, '输出目录（留空则不记录）', False)
 
     # 比赛设置
-    solo_frame = Frame(tk)
+    solo_frame = Frame(tk_left)
     solo_frame.pack(padx=5, fill=X)
     width_set = checked_entry(solo_frame, int, 51, '场地半宽：')
     height_set = checked_entry(solo_frame, int, 101, '场地高：')
-    turns_set = checked_entry(solo_frame, int, 2000, '最大回合数：')
-    time_set = checked_entry(solo_frame, float, 30, '总计思考时间：')
     Button(
         solo_frame, text='SOLO!', command=run_match).pack(
             side=LEFT, fill=Y, pady=[5, 0], padx=5)
     Button(
         solo_frame, text='读取记录', command=load_log).pack(
             side=LEFT, fill=Y, pady=[5, 0], padx=[5, 0])
-    display = display_frame(tk)
+    solo_frame = Frame(tk_left)
+    solo_frame.pack(padx=5, pady=5, fill=X)
+    turns_set = checked_entry(solo_frame, int, 2000, '最大回合数：')
+    time_set = checked_entry(solo_frame, float, 30, '总计思考时间：')
+    display = display_frame(tk, tk_left)
 
 # 运行窗口
 while 1:
