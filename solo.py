@@ -519,7 +519,7 @@ if 'race funcs':
         display._setup_players((name1, name2))
 
         # 进行比赛
-        match_result = match(name1, func1, name2, func2, width_set.get(),
+        match_result = match((func1, func2), (name1, name2), width_set.get(),
                              height_set.get(), turns_set.get(), time_set.get())
         display.load_match_result(match_result, False)
 

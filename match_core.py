@@ -1,6 +1,7 @@
 from time import perf_counter as pf
 from random import randrange
 from threading import Thread
+from collections import namedtuple
 import pickle, os, traceback
 
 __doc__ = '''比赛逻辑
@@ -8,25 +9,26 @@ __doc__ = '''比赛逻辑
 match函数输入双方名称与AI函数返回比赛结果
 AI函数应接收游戏数据与自身存储空间，返回'left'，'right'或None
 游戏数据格式：字典
-    turnleft : 剩余回合数
-    timeleft : 双方剩余思考时间
-    fields : 纸片场地深拷贝
-    bands : 纸带场地深拷贝
-    players : 玩家信息
-        id : 玩家标记（1或2）
-        x : 横坐标（场地数组下标1）
-        y : 纵坐标（场地数组下标2）
-        direction : 当前方向
-            0 : 向东
-            1 : 向南
-            2 : 向西
-            3 : 向北
-    me : 该玩家信息
-    enemy : 对手玩家信息
-
-match_with_log函数同样进行比赛，但将结果通过pickles库输出为pkl文件
+    size : 场地大小
+    log : 游戏记录
+    now : 该回合游戏数据
+        turnleft : 剩余回合数
+        timeleft : 双方剩余思考时间
+        fields : 纸片场地深拷贝
+        bands : 纸带场地深拷贝
+        players : 玩家信息
+            id : 玩家标记（1或2）
+            x : 横坐标（场地数组下标1）
+            y : 纵坐标（场地数组下标2）
+            direction : 当前方向
+                0 : 向东
+                1 : 向南
+                2 : 向西
+                3 : 向北
+        me : 该玩家信息
+        enemy : 对手玩家信息
 '''
-__all__ = ['match', 'match_with_log']
+__all__ = ['match']
 
 # 超时处理
 if 'timeout':
@@ -93,9 +95,9 @@ if 'global params':
     FIELDS = None  # 已生成区域判定区 = [[None] * HEIGHT for i in range(WIDTH)]
     PLAYERS = [None] * 2
 
-    # AI函数存储空间与跨比赛记忆
-    STORAGE = [None] * 2
-    MEMORY = [{}, {}]
+    # AI函数存储空间
+    STAT = [None] * 2  # 比赛信息
+    STORAGE = [{}, {}]  # 私有存储
 
     # 其它
     LOG_PUBLIC = None  # 全局比赛记录列表
@@ -316,12 +318,13 @@ if 'helpers':
         # 创建初始场景拷贝
         f, b = field_copy()
 
-        # 初始化存储空间
+        # 初始化比赛信息存储
         for i in range(2):
-            STORAGE[i] = {
+            first_frame = get_params(f, b, i)
+            STAT[i] = {
                 'size': (WIDTH, HEIGHT),
-                'log': [get_params(f, b, i)],
-                'memory': MEMORY[i]
+                'log': [first_frame],
+                'now': first_frame
             }
 
         # 建立全局比赛记录
@@ -405,9 +408,6 @@ if 'helpers':
                 -2 - 超时
                 -3 - 回合数耗尽，结算得分
         '''
-        # 提取传给双方的初始场景
-        frames = [s['log'][-1] for s in STORAGE]
-
         # 双方初始化环境
         for plr_index in (0, 1):
             # 未声明load函数则跳过
@@ -416,11 +416,12 @@ if 'helpers':
 
             # 准备输入参数
             func = funcs[plr_index].load
+            stat = STAT[plr_index]
             storage = STORAGE[plr_index]
 
             # 运行装载函数并计时
             try:
-                timecost = timer(MAX_TIME, func, (storage, ))[1]
+                timecost = timer(MAX_TIME, func, (stat, storage))[1]
             except TimeOut:
                 return (1 - plr_index, -2)
             except Exception as e:
@@ -435,7 +436,7 @@ if 'helpers':
                 # 获取当前玩家、AI、游戏信息、存储空间
                 plr = PLAYERS[plr_index]
                 func = funcs[plr_index].play
-                stat = frames[plr_index]
+                stat = STAT[plr_index]
                 storage = STORAGE[plr_index]
 
                 # 执行AI并计时
@@ -470,8 +471,9 @@ if 'helpers':
 
                 # 双方玩家比赛记录
                 for i in range(2):
-                    frames[i] = get_params(f, b, i)
-                    STORAGE[i]['log'].append(frames[i])
+                    new_frame = get_params(f, b, i)
+                    STAT[i]['log'].append(new_frame)
+                    STAT[i]['now'] = new_frame
 
                 # 全局比赛记录
                 frame = get_params(f, b)
@@ -497,21 +499,18 @@ if 'helpers':
 
 
 # 主函数
-def match(name1, plr1, name2, plr2, k=51, h=101, max_turn=2000, max_time=30):
+def match(players,
+          names=('plr1', 'plr2'),
+          k=51,
+          h=101,
+          max_turn=2000,
+          max_time=30):
     '''
     一次比赛
     params:
-        name1 - 玩家1名称 (str)
-        plr1 - 玩家1代码文件
-            play函数：
-                接收游戏数据与游戏存储
-                返回操作符（left，right，None）
-            （可选）load函数：
-                接收初始的游戏存储，进行初始化
-            （可选）summary函数：
-                一局对决结束后接收游戏存储，总结比赛
+        players - 先后手玩家代码文件列表
             详见AI_Template.pdf
-        name2 - 玩家2名称
+        names - 先后手玩家名称
         plr2 - 玩家2代码文件
         k - 场地半宽（奇数）
         h - 场地高（奇数）
@@ -529,7 +528,7 @@ def match(name1, plr1, name2, plr2, k=51, h=101, max_turn=2000, max_time=30):
     init_field(k, h, max_turn, max_time)
 
     # 运行比赛，并记录终局场景
-    match_result = parse_match((plr1, plr2))
+    match_result = parse_match(players)
     if match_result[1] >= 0:
         frame = get_params(*field_copy())
         FRAME_FUNC(frame)
@@ -542,58 +541,21 @@ def match(name1, plr1, name2, plr2, k=51, h=101, max_turn=2000, max_time=30):
         match_result = (winner, match_result[1], scores)
 
     # 双方总结比赛
-    if 'summary' in dir(plr1):
+    for i in range(2):
         try:
-            plr1.summary(match_result[:2], STORAGE[0])
-        except:
-            pass
-    if 'summary' in dir(plr2):
-        try:
-            plr2.summary(match_result[:2], STORAGE[1])
+            players[i].summary(match_result[:2], STAT[i], STORAGE[i])
         except:
             pass
 
     # 生成对局记录对象
     return {
-        'players': (name1, name2),
+        'players': names,
         'size': (WIDTH, HEIGHT),
         'maxturn': MAX_TURNS,
         'maxtime': MAX_TIME,
-        'log': LOG_PUBLIC,
-        'result': match_result
+        'result': match_result,
+        'log': LOG_PUBLIC
     }
-
-
-def match_with_log(*args, **kwargs):
-    '''
-    使用pickle库将比赛结果记录为文件
-
-    params:
-        name1 - 玩家1名称 (str)
-        func1 - 玩家1控制函数
-            接收游戏数据字典
-            包含纸片场地、纸带场地、玩家位置、玩家朝向等参数
-            返回操作符（left，right，None）
-            详见文件注释与get_params函数注释
-        name2 - 玩家2名称
-        func2 - 玩家2控制函数
-        k - 场地半宽（奇数）
-        h - 场地高（奇数）
-        max_turn - 总回合数（双方各行动一次为一回合）
-        max_time - 总思考时间（秒）
-
-    详见match函数注释
-    '''
-    # 进行比赛
-    one_match = match(*args, **kwargs)
-
-    # 输出文件
-    os.makedirs('log', exist_ok=True)
-    with open('log/%s-VS-%s.pkl' % tuple(one_match['players']), 'wb') as file:
-        pickle.dump(one_match, file)
-
-    # 返回比赛记录
-    return one_match
 
 
 if __name__ == '__main__':
@@ -603,6 +565,6 @@ if __name__ == '__main__':
             return 'l'
 
     t1 = pf()
-    match('t1', null_plr(), 't2', null_plr())
+    res=match((null_plr(),)*2)
     t2 = pf()
     print(t2 - t1)

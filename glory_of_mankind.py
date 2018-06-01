@@ -34,7 +34,7 @@ if 'players':
                     storage['max'] += 1
                 return 'l'
 
-        def load(storage):
+        def load(stat, storage):
             storage['cur'] = 0
             storage['max'] = 2
             storage['edges'] = 0
@@ -46,7 +46,8 @@ if 'players':
         def play(stat, storage):
             sleep(human_control.delay)
             if human_control.op is not None:
-                op = (human_control.op - stat['me']['direction'] + 4) % 4
+                op = (
+                    human_control.op - stat['now']['me']['direction'] + 4) % 4
                 res = ' R L' [op]
                 human_control.op = None
                 return res
@@ -88,8 +89,7 @@ if 'race funcs':
 
         # 开始比赛
         run_match.thread = Thread(
-            target=run_match_inner,
-            args=(names[0], func1, names[1], func2, k, h, t, 30))
+            target=run_match_inner, args=((func1, func2), names, k, h, t, 30))
         run_match.thread.start()
 
     def run_match_inner(*args):
@@ -97,7 +97,7 @@ if 'race funcs':
             w['state'] = DISABLED
 
         match_result = match_core.match(*args)
-        names = (args[0], args[2])
+        names = args[1]
         info.set(end_text(names, match_result['result']))
 
         try:
@@ -105,9 +105,10 @@ if 'race funcs':
             if outputdir:
                 os.makedirs(outputdir, exist_ok=True)
 
-            with open(os.path.join(outputdir, '%s-VS-%s.pkl' % names),
-                      'wb') as file:
-                pickle.dump(match_result, file)
+                with open(
+                        os.path.join(outputdir, '%s-VS-%s.pkl' % names),
+                        'wb') as file:
+                    pickle.dump(match_result, file)
         except Exception as e:
             showerror(type(e).__name__, str(e))
 

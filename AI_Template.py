@@ -3,7 +3,7 @@ __doc__ = '''模板AI函数
 （必要）play函数接收参数包含两部分：游戏数据与函数存储
 需返回字符串表示的转向标记
 
-（可选）load函数接收空的函数存储，可在此初始化必要的变量
+（可选）load函数接收初始游戏数据与函数存储，可在此初始化必要的变量
 
 详见AI_Template.pdf
 '''
@@ -25,13 +25,14 @@ def play(stat, storage):
     pass
 
 
-def load(storage):
+def load(stat, storage):
     '''
     初始化函数，向storage中声明必要的初始参数
-    若该函数未声明将使用lambda storage:None替代
-    初始状态storage为：{'size': (WIDTH, HEIGHT), 'log': [开局游戏状态], 'memory': {*跨比赛存储的内容*}}
+    若该函数未声明将不执行
+    
 
     params:
+        stat - 游戏数据
         storage - 游戏存储
     '''
     pass
