@@ -1,6 +1,7 @@
 def play(stat, storage):
     curr_mode = storage[storage['mode']]
     field, me = stat['now']['fields'], stat['now']['me']
+    storage['enemy'] = stat['now']['enemy']
     return curr_mode(field, me, storage)
 
 
@@ -8,6 +9,10 @@ def load(stat, storage):
     # 基础设施准备
     directions = ((1, 0), (0, 1), (-1, 0), (0, -1))
     from random import choice, randrange
+
+    # 计算距离
+    def dist(me, enemy):
+        return abs(enemy['x'] - me['x']) + abs(enemy['y'] - me['y'])
 
     # 领地内游走函数
     def wander(field, me, storage):
@@ -42,8 +47,10 @@ def load(stat, storage):
         if field[me['x']][me['y']] != me['id']:
             storage['mode'] = 'square'
             storage['count'] = randrange(1, 3)
-            storage['maxl'] = randrange(4, 7)
             storage['turn'] = choice('rl')
+            storage['maxl'] = max(
+                randrange(4, 7),
+                dist(me, storage['enemy']) // 5)
             return ''
 
         # 随机前进，转向频率递减
@@ -88,7 +95,9 @@ def load(stat, storage):
         elif field[me['x']][me['y']] != me['id']:
             storage['mode'] = 'square'
             storage['count'] = randrange(1, 3)
-            storage['maxl'] = randrange(4, 7)
+            storage['maxl'] = max(
+                randrange(4, 7),
+                dist(me, storage['enemy']) // 5)
             storage['turn'] = choice('rl')
             return ''
 
