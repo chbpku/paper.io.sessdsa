@@ -27,6 +27,21 @@
 
 ## 修改历史
 
+### 20180601
+- 参数接口更改
+    - 参数内容更改
+        - stat现包括场地大小与比赛记录
+        - storage改为多局比赛间不重置的私有存储
+        - 原场地信息stat现为stat\['now'\]
+        - 原场地大小storage\['size'\]现为stat\['size'\]
+        - 原比赛记录storage\['log'\]现为stat\['log'\]
+    - AI函数接口更改
+        - load与summary函数增加比赛信息stat接收，详见AI_Template.pdf
+- match_core.py中移除match_with_log函数
+
+### 20180531
+- 陈天翔创建人机对战工具
+
 ### 20180530
 - 陈天翔为比赛可视化工具增加进度条功能
 
