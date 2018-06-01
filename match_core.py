@@ -2,7 +2,7 @@ from time import perf_counter as pf
 from random import randrange
 from threading import Thread
 from collections import namedtuple
-import pickle, os, traceback
+import traceback
 
 __doc__ = '''比赛逻辑
 
@@ -565,6 +565,6 @@ if __name__ == '__main__':
             return 'l'
 
     t1 = pf()
-    res=match((null_plr(),)*2)
+    res = match((null_plr(), ) * 2)
     t2 = pf()
     print(t2 - t1)

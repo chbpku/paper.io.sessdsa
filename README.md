@@ -15,15 +15,17 @@
 ## 文件说明
 - README.md：本文件
 - LICENSE：授权文件GPL 3.0
-- sessdsa2018-paper.io.pdf：实习作业说明PPT
-- match_core.py：游戏执行逻辑（配套说明md文件）
-- visualize_console.py：控制台复盘代码（配套说明md文件）
-- roundRobin.py：循环赛代码
-- [AI]：一些示例AI
-- AI_Template.py：AI编写模板（配套说明pdf文件）
-- paper_io_20180522.pdf：说明文档
-- solo.py：自定义比赛与记录回放工具
 - UPDATE.py：更新工具
+* match_core.py：游戏执行逻辑（配套代码分析报告）
+* match_interface.py：游戏逻辑接口
+- sessdsa2018-paper.io.pdf：实习作业说明PPT
+- paper_io_20180522.pdf：说明文档
+- AI_Template.py：AI编写模板（配套说明pdf文件）
+- [AI]：一些示例AI
+* visualize_console.py：控制台复盘代码（配套说明md文件）
+* roundRobin.py：循环赛代码
+* solo.py：自定义比赛与记录回放工具
+* glory_of_mankind.py：人机对战工具
 
 ## 修改历史
 
@@ -38,6 +40,8 @@
     - AI函数接口更改
         - load与summary函数增加比赛信息stat接收，详见AI_Template.pdf
 - match_core.py中移除match_with_log函数
+- 陈天翔创建游戏逻辑接口代码match_interface.py，增加多局对决功能
+    - 多局比赛起始、结束函数接口暂定为init与summaryall
 
 ### 20180531
 - 陈天翔创建人机对战工具
