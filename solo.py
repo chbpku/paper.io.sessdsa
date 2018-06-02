@@ -3,7 +3,7 @@ from tkinter.filedialog import askopenfilename, askdirectory
 from tkinter.messagebox import showerror
 from time import perf_counter as pf
 from colorsys import hsv_to_rgb
-import os, sys, pickle, traceback, importlib
+import os, sys, pickle, zlib, traceback
 
 from match_core import match
 
@@ -483,12 +483,12 @@ if 'display funcs':
 if 'race funcs':
 
     def load_log():
-        log_path = askopenfilename(filetypes=[('对战记录文件', '*.pkl'), ('全部文件',
-                                                                    '*.*')])
+        log_path = askopenfilename(filetypes=[('对战记录文件', '*.zlog'), ('全部文件',
+                                                                     '*.*')])
         if not log_path: return
         try:
             with open(log_path, 'rb') as file:
-                log = pickle.load(file)
+                log = pickle.loads(zlib.decompress(file.read()))
         except Exception as e:
             showerror('%s: %s' % (os.path.split(log_path)[1],
                                   type(e).__name__), str(e))
@@ -515,7 +515,8 @@ if 'race funcs':
         display._setup_players((name1, name2))
 
         # 进行比赛
-        match_result = match((func1, func2), (name1, name2), width_set.get(),
+        names = (name1, name2)
+        match_result = match((func1, func2), names, width_set.get(),
                              height_set.get(), turns_set.get(), time_set.get())
         display.load_match_result(match_result, False)
 
@@ -524,10 +525,11 @@ if 'race funcs':
         if not output_dir:
             return
         os.makedirs(output_dir, exist_ok=1)
-        with open(
-                os.path.join(output_dir, '%s-VS-%s.pkl' % (name1, name2)),
-                'wb') as file:
-            pickle.dump(match_result, file)
+
+        # 保存压缩后的字节串
+        with open(os.path.join(output_dir, '%s-VS-%s.zlog' % names),
+                  'wb') as file:
+            file.write(zlib.compress(pickle.dumps(match_result), -1))
 
 
 # 合成窗口

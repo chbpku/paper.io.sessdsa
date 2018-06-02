@@ -379,12 +379,12 @@ if 'helpers':
         res['turnleft'] = tuple(TURNS)
         res['timeleft'] = tuple(TIMES)
         res['fields'] = fields
-        res['bands'] = bands
         res['players'] = list(map(player.get_info, PLAYERS))
         if curr_plr is None:
             res['band_route'] = list(
                 map(lambda plr: tuple(plr.band_direction), PLAYERS))
         else:
+            res['bands'] = bands
             res['me'] = res['players'][curr_plr]
             res['enemy'] = res['players'][1 - curr_plr]
         return res

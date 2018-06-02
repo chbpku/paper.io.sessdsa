@@ -4,7 +4,7 @@ from tkinter.messagebox import showerror
 from time import perf_counter as pf, sleep
 from colorsys import hsv_to_rgb
 from threading import Thread
-import os, sys, pickle
+import os, sys, pickle, zlib
 
 import match_core
 
@@ -107,10 +107,12 @@ if 'race funcs':
             if outputdir:
                 os.makedirs(outputdir, exist_ok=True)
 
+                # 保存压缩后的字节串
                 with open(
-                        os.path.join(outputdir, '%s-VS-%s.pkl' % names),
+                        os.path.join(outputdir, '%s-VS-%s.zlog' % names),
                         'wb') as file:
-                    pickle.dump(match_result, file)
+                    file.write(zlib.compress(pickle.dumps(match_result), -1))
+
         except Exception as e:
             showerror(type(e).__name__, str(e))
 

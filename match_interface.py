@@ -1,4 +1,4 @@
-import os, pickle
+import os, pickle, zlib
 
 import match_core
 from match_core import match
@@ -21,7 +21,7 @@ if 'storage operations':
 
 def save_match_log(obj, path):
     '''
-    保存比赛记录为pkl文件
+    保存比赛记录为文件
     params:
         obj - 待保存对象
         path - 保存路径
@@ -29,8 +29,9 @@ def save_match_log(obj, path):
     folder = os.path.dirname(path)
     if folder:
         os.makedirs(folder, exist_ok=True)
+
     with open(path, 'wb') as f:
-        pickle.dump(obj, f)
+        f.write(zlib.compress(pickle.dumps(obj), -1))
 
 
 def repeated_match(players, names, rounds, log_record=False, *args, **kwargs):
@@ -78,7 +79,7 @@ def repeated_match(players, names, rounds, log_record=False, *args, **kwargs):
 
         # 生成比赛记录
         if log_record:
-            log_name = 'log/%s-VS-%s_%s.pkl' % (*names, i)
+            log_name = 'log/%s-VS-%s_%s.zlog' % (*names, i)
             save_match_log(match_log, log_name)
 
     # 总总结函数
