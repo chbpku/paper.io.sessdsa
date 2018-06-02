@@ -498,5 +498,12 @@ if 'widgets':
         tk_left, textvariable=info, justify=LEFT).pack(
             padx=5, pady=5, anchor=W)
 
+    # 双击全选功能
+    def focus_select_all(e):
+        e.widget.select_range(0, END)
+        e.widget.icursor(END)
+
+    tk.bind_class('Entry', '<Double-1>', focus_select_all)
+
 # 运行窗口
 tk.mainloop()

@@ -567,6 +567,13 @@ if 'widget':
     time_set = checked_entry(solo_frame, float, 30, '总计思考时间：')
     display = display_frame(tk, tk_left)
 
+    # 双击全选功能
+    def focus_select_all(e):
+        e.widget.select_range(0, END)
+        e.widget.icursor(END)
+
+    tk.bind_class('Entry', '<Double-1>', focus_select_all)
+
 # 运行窗口
 while 1:
     display.update()
