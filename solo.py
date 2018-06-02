@@ -370,10 +370,25 @@ if 'classes':
             # 更新屏幕信息
             if self.frame_index == len(self.frame_seq) - 1:
                 self.info.set(end_text(self.names, self.match_result))
+            
             else:
-                self.info.set(
-                    step_text(self.names, cur_frame, self.frame_index,
-                              len(self.frame_seq)))
+                currentFIELDS = self.last_frame['fields']
+                playersFIELDS = [0, 0]
+                for i in range(len(currentFIELDS)):
+                    for j in range(len(currentFIELDS[i])):
+                        if currentFIELDS[i][j] is not None:
+                            playersFIELDS[currentFIELDS[i][j]-1] += 1
+                mystr = '\n先手有领地 %d\n后手有领地 %d\n' % \
+                        (playersFIELDS[0], playersFIELDS[1])
+                if playersFIELDS[0] > playersFIELDS[1]:
+                    mystr += '先手领先'
+                elif playersFIELDS[0] < playersFIELDS[1]:
+                    mystr += '后手领先'
+                else:
+                    mystr += '两者目前领地大小相等'
+                            
+                self.info.set(step_text(self.names, cur_frame, 
+                    self.frame_index, len(self.frame_seq)) + mystr)
 
             # 记录已渲染的帧用作参考
             self.last_frame = cur_frame
