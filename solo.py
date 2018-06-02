@@ -454,10 +454,7 @@ if 'display funcs':
             return '玩家%s在领地内被对手撞击，获得胜利\n' % s
 
         if rtype == -1:
-            try:
-                print(match.DEBUG_TRACEBACK)
-            except:
-                pass
+            print(match.DEBUG_TRACEBACK)
             return '由于玩家%s函数报错\n(%s: %s)\n玩家%s获得胜利' % (
                 f, type(result[2]).__name__, result[2], s)
 

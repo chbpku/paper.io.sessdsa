@@ -171,6 +171,7 @@ if 'display funcs':
             return '%s在领地内被对手撞击，获得胜利' % s
 
         if rtype == -1:
+            print(match_core.match.DEBUG_TRACEBACK)
             return '由于%s函数报错(%s: %s)，%s获得胜利' % (f, type(result[2]).__name__,
                                                 result[2], s)
 
