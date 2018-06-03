@@ -100,8 +100,18 @@ cur_status()
 # 根据赛程比赛
 for scheduleFlag in range(len(schedule)):
     [name1, func1, name2, func2] = schedule[scheduleFlag]
+<<<<<<< HEAD
 
     # 比赛结果统计
+=======
+    
+    # 比赛局数为 GAMES 的两倍，其中先后手各 GAMES 局
+    GAMES = 50
+    HALFWIDTH = 51
+    HEIGHT = 101
+    ROUNDSPERGAME = 1000
+    TIMELIMIT = 30
+>>>>>>> 4a65a9d6ee76323bdc98f986e64e89ffe8b2ba29
     battleResult = [0, 0]
 
     # 初始化存储空间
