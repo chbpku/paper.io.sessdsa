@@ -63,10 +63,10 @@ for scheduleFlag in range(len(schedule)):
     [name1, func1, name2, func2] = schedule[scheduleFlag]
     
     # 比赛局数为 GAMES 的两倍，其中先后手各 GAMES 局
-    GAMES = 10
-    HALFWIDTH = 21
-    HEIGHT = 41
-    ROUNDSPERGAME = 100
+    GAMES = 50
+    HALFWIDTH = 51
+    HEIGHT = 101
+    ROUNDSPERGAME = 1000
     TIMELIMIT = 30
     battleResult = [0, 0]
     
