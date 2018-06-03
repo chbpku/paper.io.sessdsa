@@ -316,7 +316,6 @@ if 'classes':
                     'fields':
                     [[None] * self.size[1] for i in range(self.size[0])]
                 }
-                self.last_frame = None
 
             # 清空屏幕
             self._clear()
