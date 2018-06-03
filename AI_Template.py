@@ -1,9 +1,10 @@
 __doc__ = '''模板AI函数
 
-（必要）play函数接收参数包含两部分：游戏数据与函数存储
-需返回字符串表示的转向标记
+（必要）play函数
 
-（可选）load函数接收初始游戏数据与函数存储，可在此初始化必要的变量
+（可选）load，summary函数
+
+（多局比赛中可选）init，summaryall函数
 
 详见AI_Template.pdf
 '''
@@ -11,7 +12,8 @@ __doc__ = '''模板AI函数
 
 def play(stat, storage):
     '''
-    AI函数
+    AI函数，返回指令决定玩家转向方式
+    该函数超时或报错将判负
 
     params:
         stat - 游戏数据
@@ -29,8 +31,8 @@ def load(stat, storage):
     '''
     初始化函数，向storage中声明必要的初始参数
     若该函数未声明将不执行
+    该函数超时或报错将判负
     
-
     params:
         stat - 游戏数据
         storage - 游戏存储
@@ -38,27 +40,37 @@ def load(stat, storage):
     pass
 
 
-def summary(match_result, storage):
+def summary(match_result, stat, storage):
     '''
-    对局总结函数
-    可将总结内容记录于storage['memory']关键字的字典中，内容将会保留
+    一局对局总结函数
+    若该函数未声明将不执行
+    该函数报错将跳过
 
     params:
         match_result - 对局结果
-            长度为2的元组，记录了本次对局的结果
-            [0] - 胜者
-                0 - 先手玩家胜
-                1 - 后手玩家胜
-                None - 平局
-            [1] - 胜负原因
-                0 - 撞墙
-                1 - 纸带碰撞
-                2 - 侧碰
-                3 - 正碰，结算得分
-                4 - 领地内互相碰撞
-                -1 - AI函数报错
-                -2 - 超时
-                -3 - 回合数耗尽，结算得分
+        stat - 游戏数据
+        storage - 游戏存储
+    '''
+    pass
+
+def init(storage):
+    '''
+    多轮对决中全局初始化函数，向storage中声明必要的初始参数
+    若该函数未声明将不执行
+    该函数报错将跳过
+    
+    params:
+        storage - 游戏存储
+    '''
+    pass
+
+def summaryall(storage):
+    '''
+    多轮对决中整体总结函数
+    若该函数未声明将不执行
+    该函数报错将跳过
+
+    params:
         storage - 游戏存储
     '''
     pass
