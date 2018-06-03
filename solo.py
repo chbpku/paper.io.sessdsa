@@ -376,21 +376,21 @@ if 'classes':
                 self.info.set(end_text(self.names, self.match_result))
 
             else:
+                extra_info = '\n双方剩余时间：%.2fs - %.2fs\n' % (
+                    cur_frame['timeleft'])
                 if self.frame_index > 0:
-                    size_info = '\n先手领地大小：%d\n后手领地大小：%d\n' % tuple(field_count)
+                    extra_info += '双方领地大小：%d - %d\n' % tuple(field_count)
 
                     if field_count[0] > field_count[1]:
-                        size_info += '先手领先'
+                        extra_info += '先手领先'
                     elif field_count[0] < field_count[1]:
-                        size_info += '后手领先'
+                        extra_info += '后手领先'
                     else:
-                        size_info += '两者目前领地大小相等'
-                else:
-                    size_info=''
+                        extra_info += '两者目前领地大小相等'
 
                 self.info.set(
                     step_text(self.names, cur_frame, self.frame_index,
-                              len(self.frame_seq)) + size_info)
+                              len(self.frame_seq)) + extra_info)
 
             # 记录已渲染的帧用作参考
             self.last_frame = cur_frame
@@ -429,7 +429,7 @@ if 'display funcs':
         plr_movement = '东南西北' [slice['players'][plr_ind]['direction']]
 
         # 合成
-        return res + '玩家%s向%s移动.' % (plr_name, plr_movement)
+        return res + '%s手玩家%s向%s移动.' % ('先后' [plr_ind], plr_name, plr_movement)
 
     def end_text(names, result):
         '''
@@ -471,7 +471,10 @@ if 'display funcs':
             return '玩家%s在领地内被对手撞击，获得胜利\n' % s
 
         if rtype == -1:
-            print(match.DEBUG_TRACEBACK)
+            try:
+                print(match.DEBUG_TRACEBACK)
+            except:
+                pass
             return '由于玩家%s函数报错\n(%s: %s)\n玩家%s获得胜利' % (
                 f, type(result[2]).__name__, result[2], s)
 
