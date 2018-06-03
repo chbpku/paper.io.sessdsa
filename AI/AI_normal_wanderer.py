@@ -10,9 +10,9 @@ def load(stat, storage):
     directions = ((1, 0), (0, 1), (-1, 0), (0, -1))
     from random import choice, randrange
 
-    # 计算距离
+    # 计算安全距离
     def dist(me, enemy):
-        return abs(enemy['x'] - me['x']) + abs(enemy['y'] - me['y'])
+        return max(2,(abs(enemy['x'] - me['x']) + abs(enemy['y'] - me['y']))//5)
 
     # 领地内游走函数
     def wander(field, me, storage):
@@ -48,9 +48,7 @@ def load(stat, storage):
             storage['mode'] = 'square'
             storage['count'] = randrange(1, 3)
             storage['turn'] = choice('rl')
-            storage['maxl'] = max(
-                randrange(4, 7),
-                dist(me, storage['enemy']) // 5)
+            storage['maxl'] = dist(me, storage['enemy'])
             return ''
 
         # 随机前进，转向频率递减
@@ -95,9 +93,7 @@ def load(stat, storage):
         elif field[me['x']][me['y']] != me['id']:
             storage['mode'] = 'square'
             storage['count'] = randrange(1, 3)
-            storage['maxl'] = max(
-                randrange(4, 7),
-                dist(me, storage['enemy']) // 5)
+            storage['maxl'] = dist(me, storage['enemy'])
             storage['turn'] = choice('rl')
             return ''
 

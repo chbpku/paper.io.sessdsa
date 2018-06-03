@@ -1,6 +1,5 @@
 from time import perf_counter as pf
 from random import randrange
-from threading import Thread
 from collections import namedtuple
 import traceback
 
@@ -36,20 +35,6 @@ if 'timeout':
     class TimeOut(Exception):
         pass
 
-    def ReturnThread(func, params):
-        '''
-        计时函数调用线程
-        通过函数参数传递内部函数返回值
-
-        params:
-            func - 待执行函数
-            params - 函数参数
-        '''
-        try:
-            ReturnThread.result = func(*params)
-        except Exception as e:
-            ReturnThread.result = e
-
     def timer(timeleft, func, params):
         '''
         计时函数，统计一个函数运行时间并监控其是否超时
@@ -62,23 +47,17 @@ if 'timeout':
         returns:
             (函数返回值, 执行用时)
         '''
-        # 初始化执行线程
-        thread = Thread(target=ReturnThread, args=(func, params))
-
         # 运行并计时
-        thread.start()
         t1 = pf()
-        thread.join(timeleft)
+        res = func(*params)
         t2 = pf()
 
         # 若超时则报错，否则返回消耗时间
-        if thread.is_alive() or t2 - t1 >= timeleft:
+        if t2 - t1 >= timeleft:
             raise TimeOut()
 
-        # 返回函数结果或抛出异常
-        if isinstance(ReturnThread.result, Exception):
-            raise ReturnThread.result
-        return ReturnThread.result, t2 - t1
+        # 返回函数结果
+        return res, t2 - t1
 
 
 # 参数
