@@ -233,12 +233,23 @@ if __name__ == "__main__":
             params:
                 file - 输出流
             '''
+<<<<<<< HEAD
             # 清屏
             if file == sys.__stdout__:
                 if system() == 'Windows':
                     os.system('cls')
                 else:
                     os.system('clear')
+=======
+            # 统计得分
+            scores = []
+
+            # 清屏，绘制表格，统计得分
+            if system() == 'Windows':
+                os.system('cls')
+            else:
+                os.system('clear')
+>>>>>>> ba343ec4c0663528b519f3053ae2048090c7d714
 
             # 绘制表格，统计得分
             scores = []
