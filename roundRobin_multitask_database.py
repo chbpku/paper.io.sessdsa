@@ -269,9 +269,8 @@ if __name__ == "__main__":
                 if i == MAX_PROMOTION:
                     print('-' * 40, file=file)
                 plr = scores[i]
-                line = plr[0].rjust(max_name_len) + (
-                    '(%d)' % plr[1]).rjust(6) + ' '
-                line += '##' * plr[1] + '--' * plr[2]
+                line = plr[0].rjust(max_name_len)
+                line += '##' * plr[1] + '--' * plr[2] + ' %d' % plr[1]
                 print(line, file=file)
 
     # 主事件循环
