@@ -150,7 +150,6 @@ if __name__ == "__main__":
                     # 读取时出错
                     except Exception as e:
                         print('读取%r时出错：%s' % (file, e), file=errlist)
-        shuffle(players)
         with open('%s/players.txt' % TEAM, 'w') as plrlist:
             for plr in players:
                 print(plr, file=plrlist)
@@ -165,6 +164,7 @@ if __name__ == "__main__":
                 else:
                     tasks_buffer.append((players[j], players[i]))
         shuffle(tasks_buffer)
+        players.sort()
 
     # 函数定义
     if 'helpers':
@@ -233,14 +233,18 @@ if __name__ == "__main__":
             params:
                 file - 输出流
             '''
-            # 统计得分
+            # 清屏
+            if file == sys.__stdout__:
+                if system() == 'Windows':
+                    os.system('cls')
+                else:
+                    os.system('clear')
+
+            # 绘制表格，统计得分
             scores = []
-
-            # 清屏，绘制表格，统计得分
-
             print('Status:', file=file)
             for plr in players:
-                score, left = 0, 0
+                score = 0
                 line = plr.rjust(max_name_len) + ': |'
                 for cp in players:
                     if plr == cp:
@@ -254,13 +258,15 @@ if __name__ == "__main__":
                                 score += 3
                             elif pair_result == '0':
                                 score += 1
+                        elif pair in rounds_stat:
+                            line += '%02d-%02d' % (rounds_stat[pair][0],
+                                                   rounds_stat[pair][1])
                         else:
                             line += '     '
-                            left += 1
                     line += '|'
                 line += '  %d' % score
                 print(line, file=file)
-                scores.append((plr, score, left))
+                scores.append((plr, score))
 
             # 得分排序
             print('\n\nRanking:', file=file)
@@ -269,8 +275,8 @@ if __name__ == "__main__":
                 if i == MAX_PROMOTION:
                     print('-' * 40, file=file)
                 plr = scores[i]
-                line = plr[0].rjust(max_name_len)
-                line += '##' * plr[1] + '--' * plr[2] + ' %d' % plr[1]
+                line = plr[0].rjust(max_name_len) + ' |'
+                line += '##' * plr[1] + ' %d' % plr[1]
                 print(line, file=file)
 
     # 主事件循环
