@@ -237,6 +237,10 @@ if __name__ == "__main__":
             scores = []
 
             # 清屏，绘制表格，统计得分
+            if system() == 'Windows':
+                os.system('cls')
+            else:
+                os.system('clear')
 
             print('Status:', file=file)
             for plr in players:
