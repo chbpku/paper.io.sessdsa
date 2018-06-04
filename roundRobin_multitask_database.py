@@ -237,15 +237,10 @@ if __name__ == "__main__":
             scores = []
 
             # 清屏，绘制表格，统计得分
-            if file == sys.__stdout__:
-                if system() == 'Windows':
-                    os.system('cls')
-                else:
-                    os.system('clear')
 
             print('Status:', file=file)
             for plr in players:
-                score = 0
+                score, left = 0, 0
                 line = plr.rjust(max_name_len) + ': |'
                 for cp in players:
                     if plr == cp:
@@ -259,15 +254,13 @@ if __name__ == "__main__":
                                 score += 3
                             elif pair_result == '0':
                                 score += 1
-                        elif pair in rounds_stat:
-                            line += '%02d-%02d' % (rounds_stat[pair][0],
-                                                   rounds_stat[pair][1])
                         else:
                             line += '     '
+                            left += 1
                     line += '|'
                 line += '  %d' % score
                 print(line, file=file)
-                scores.append((plr, score))
+                scores.append((plr, score, left))
 
             # 得分排序
             print('\n\nRanking:', file=file)
@@ -276,8 +269,9 @@ if __name__ == "__main__":
                 if i == MAX_PROMOTION:
                     print('-' * 40, file=file)
                 plr = scores[i]
-                line = plr[0].rjust(max_name_len) + ' '
-                line += '##' * plr[1]
+                line = plr[0].rjust(max_name_len) + (
+                    '(%d)' % plr[1]).rjust(6) + ' '
+                line += '##' * plr[1] + '--' * plr[2]
                 print(line, file=file)
 
     # 主事件循环
@@ -321,5 +315,13 @@ if __name__ == "__main__":
         if not running_tasks:
             break
     visualize()
+
+    # 写入结果
     with open('%s/RESULT.txt' % TEAM, 'w') as result:
         visualize(result)
+
+    # 打包比赛记录
+    for plr in players:
+        op = "cd %s/log; tar -czf %s.tgz *%s*" % (TEAM, plr, plr)
+        print('$ ' + op, file=sys.__stdout__)
+        os.system(op)
