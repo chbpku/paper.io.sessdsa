@@ -1,5 +1,5 @@
 from tkinter import *
-from tkinter.filedialog import askopenfilename, askdirectory
+from tkinter.filedialog import askopenfilename, asksaveasfilename
 from tkinter.messagebox import showerror
 from time import perf_counter as pf, sleep
 from colorsys import hsv_to_rgb
@@ -54,8 +54,6 @@ if 'players':
                 human_control.op = None
                 return res
 
-    AI_NAME = '默认AI'
-    AI_MODULE = null_AI
 
 # 调用函数
 if 'race funcs':
@@ -69,21 +67,16 @@ if 'race funcs':
     match_core.timer = null_timer
 
     def run_match():
-        if run_match.thread.is_alive():
-            showerror(message='当前比赛未结束')
-            return
-        # 重置文字显示
-
         # 读取参数
         k = width_set.get()
         h = height_set.get()
         t = turns_set.get()
         if player_first.get():
-            names = ('人类', AI_NAME)
-            func1, func2 = human_control, AI_MODULE
+            names = ('人类', ai.AI_NAME)
+            func1, func2 = human_control, ai.AI_MODULE
         else:
-            names = (AI_NAME, '人类')
-            func1, func2 = AI_MODULE, human_control
+            names = (ai.AI_NAME, '人类')
+            func1, func2 = ai.AI_MODULE, human_control
 
         # 初始化显示环境
         display._setup_grid((k * 2, h))
@@ -95,43 +88,20 @@ if 'race funcs':
         run_match.thread.start()
 
     def run_match_inner(*args):
-        for w in OP_WIDGETS:
-            w['state'] = DISABLED
+        widget_off()
 
-        match_result = match_core.match(*args)
+        # 开始比赛
+        global MATCH_LOG
+        MATCH_LOG = match_core.match(*args)
         names = args[1]
-        info.set(end_text(names, match_result['result']))
+        info.set(end_text(names, MATCH_LOG['result']))
 
-        try:
-            outputdir = log_dir.path_var.get()
-            if outputdir:
-                os.makedirs(outputdir, exist_ok=True)
-
-                # 保存压缩后的字节串
-                with open(
-                        os.path.join(outputdir, '%s-VS-%s.zlog' % names),
-                        'wb') as file:
-                    file.write(zlib.compress(pickle.dumps(match_result), -1))
-
-        except Exception as e:
-            showerror(type(e).__name__, str(e))
-
-        for w in OP_WIDGETS:
-            try:
-                w['state'] = ACTIVE
-            except:
-                w['state'] = NORMAL
+        widget_on()
 
     run_match.thread = Thread()
 
 # 显示函数
 if 'display funcs':
-
-    def update_frame(frame):
-        display._update_screen(frame)
-        info.set('剩余%d回合' % frame['turnleft'][0])
-
-    match_core.FRAME_FUNC = update_frame
 
     def end_text(names, result):
         '''
@@ -173,7 +143,10 @@ if 'display funcs':
             return '%s在领地内被对手撞击，获得胜利' % s
 
         if rtype == -1:
-            print(match_core.match.DEBUG_TRACEBACK)
+            try:
+                print(match_core.match.DEBUG_TRACEBACK)
+            except:
+                pass
             return '由于%s函数报错(%s: %s)，%s获得胜利' % (f, type(result[2]).__name__,
                                                 result[2], s)
 
@@ -200,31 +173,44 @@ if 'display funcs':
 
 # 自定义类
 if 'classes':
-    # 定义文件选择框
-    class path_frame:
-        def __init__(self, root, display_text):
-            # 总布局框
-            frame = Frame(root)
-            frame.pack(padx=5, pady=[5, 0], fill=X)
-            Label(frame, text=display_text).pack(side=LEFT)
 
-            # 读取文件或设置输出目录
-            self.button = Button(frame, text='浏览', command=self.button_func)
+    # AI选择框
+    class AI_selection:
+        def __init__(self, root, name='AI'):
+            # tk
+            loading_frame = Frame(root)
+            loading_frame.pack(padx=5, pady=[5, 0], fill=X)
+            Label(loading_frame, text='AI: ').pack(side=LEFT)
+            self.AI_info = StringVar(value='无')
+            Label(loading_frame, textvariable=self.AI_info).pack(side=LEFT)
+            self.button = Button(
+                loading_frame, text='读取', command=self.load_ai)
             self.button.pack(side=RIGHT)
 
-            # 路径输入位置
-            self.path_var = StringVar(value='')
-            self.entry = Entry(frame, textvariable=self.path_var)
-            self.entry.pack(fill=X, pady=[3, 0])
+            # variables
+            self.name = name
+            self.AI_MODULE = None
+            self.AI_NAME = ''
 
-            # 记录于活动控件列表
-            OP_WIDGETS.append(self.button)
-            OP_WIDGETS.append(self.entry)
+        def load_ai(self):
+            path = askopenfilename(filetypes=[('AI脚本', '*.py')])
+            if not path:
+                return
+            name, ext = os.path.splitext(os.path.basename(path))
 
-        def button_func(self):
-            path = askdirectory()
-            if path:
-                self.path_var.set(path)
+            try:
+                if ext != '.py':
+                    raise TypeError('不支持类型：%s' % ext)
+
+                class load:
+                    with open(path, encoding='utf-8', errors='ignore') as f:
+                        exec(f.read())
+
+                self.AI_MODULE = load
+                self.AI_NAME = name
+                self.AI_info.set(name)
+            except Exception as e:
+                showerror('%s: %s' % (self.name, type(e).__name__), str(e))
 
     # 定义合法输入类
     class checked_entry:
@@ -277,6 +263,7 @@ if 'classes':
             # 变量
             self.size = (0, 0)
             self.names = None
+            self.last_frame = None
 
         def _setup_grid(self, size):
             '''设置屏幕网格'''
@@ -319,6 +306,9 @@ if 'classes':
 
             # 清空屏幕
             self._clear()
+
+            # 更新窗口显示
+            self.root.update()
 
         def _setup_players(self, names):
             '''根据玩家名生成颜色主题'''
@@ -370,10 +360,13 @@ if 'classes':
 
         def _update_screen(self, cur_frame):
             '''更新一帧内容'''
-            # 更新网格
+            # 更新网格+统计得分
+            scores = [0, 0]
             for x in range(self.size[0]):
                 for y in range(self.size[1]):
                     content = cur_frame['fields'][x][y]
+                    if content != None:
+                        scores[content - 1] += 1
                     if self.last_frame and \
                             content == self.last_frame['fields'][x][y]:
                         continue
@@ -411,31 +404,32 @@ if 'classes':
             # 记录已渲染的帧用作参考
             self.last_frame = cur_frame
 
+            # 更新文字内容
+            extra_info = '剩余%d回合\n' % cur_frame['turnleft'][0]
+            extra_info += '双方领地大小：%d - %d\n' % tuple(scores)
+            if scores[0] == scores[1]:
+                extra_info += '双方势均力敌'
+            elif scores[player_first.get()] == max(scores):
+                extra_info += '%s领先' % ai.AI_NAME
+            else:
+                extra_info += '人类领先'
+
+            info.set(extra_info)
+
 
 # 交互
-if 'input':
-    # 读取AI文件函数
-    def load_ai():
-        path = askopenfilename(filetypes=[('AI脚本', '*.py')])
-        if not path:
-            return
+if 'IO':
+    # 开关所有控件
+    def widget_on():
+        for w in OP_WIDGETS:
+            try:
+                w['state'] = ACTIVE
+            except:
+                w['state'] = NORMAL
 
-        name, ext = os.path.splitext(os.path.basename(path))
-
-        try:
-            if ext != '.py':
-                raise TypeError('不支持类型：%s' % ext)
-
-            class load:
-                with open(path, encoding='utf-8', errors='ignore') as f:
-                    exec(f.read())
-
-            global AI_MODULE, AI_NAME
-            AI_MODULE = load
-            AI_NAME = name
-            AI_PATH.set(name)
-        except Exception as e:
-            showerror(type(e).__name__, str(e))
+    def widget_off():
+        for w in OP_WIDGETS:
+            w['state'] = DISABLED
 
     # 绑定玩家输入
     key_mapping = {39: 0, 68: 0, 40: 1, 83: 1, 37: 2, 65: 2, 38: 3, 87: 3}
@@ -447,24 +441,38 @@ if 'input':
 
     tk.bind('<KeyPress>', key_control)
 
+    # 保存比赛记录
+    def save_log():
+        # 获取路径
+        filename = asksaveasfilename(filetypes=[('比赛记录', '*.zlog')])
+        if not filename:
+            return
+
+        if not filename.endswith('.zlog'):
+            filename += '.zlog'
+
+        # 写入比赛记录
+        widget_off()
+        try:
+            with open(filename, 'wb') as f:
+                f.write(zlib.compress(pickle.dumps(MATCH_LOG), -1))
+        except Exception as e:
+            showerror('%s: %s' % (self.name, type(e).__name__), str(e))
+        widget_on()
+
+
 # 合成窗口
 if 'widgets':
     OP_WIDGETS = []  # 开始游戏后失活的控件列表
 
     # 读取AI模块
-    loading_frame = Frame(tk_left)
-    loading_frame.pack(padx=5, pady=[5, 0], fill=X)
-    AI_PATH = StringVar(value='默认AI (循环画正方形)')
-    Label(loading_frame, text='AI: ').pack(side=LEFT)
-    Label(loading_frame, textvariable=AI_PATH).pack(side=LEFT)
-    b = Button(loading_frame, text='读取', command=load_ai)
-    OP_WIDGETS.append(b)
-    b.pack(side=RIGHT)
+    ai = AI_selection(tk_left)
+    ai.AI_info.set('默认AI (循环画正方形)')
+    ai.AI_MODULE = null_AI
+    ai.AI_NAME = '默认AI'
+    OP_WIDGETS.append(ai.button)
 
-    # 比赛记录保存位置
-    log_dir = path_frame(tk_left, '比赛记录目录(留空则不记录)')
-
-    # 比赛设置与启动
+    # 比赛设置
     if 'match setting':
         # 比赛场地设置
         setting_frame = Frame(tk_left)
@@ -486,13 +494,22 @@ if 'widgets':
         r.pack(side=LEFT)
         OP_WIDGETS.append(r)
 
+    # 启动比赛、保存记录
+    if 'run match':
+        # 保存记录
+        b = Button(
+            setting_frame, text='保存比赛记录', command=save_log, state=DISABLED)
+        b.pack(side=RIGHT, fill=Y, pady=[5, 0], padx=[5, 0])
+        OP_WIDGETS.append(b)
+
         # 开始比赛
         b = Button(setting_frame, text='开始', command=run_match)
-        b.pack(side=LEFT, fill=Y, pady=[5, 0], padx=[5, 0])
+        b.pack(side=RIGHT, fill=Y, pady=[5, 0], padx=[5, 0])
         OP_WIDGETS.append(b)
 
     # 显示窗口
     display = display_frame(tk)
+    match_core.FRAME_FUNC = display._update_screen
 
     # 信息栏
     info = StringVar(value='人類に栄光あれ！')
