@@ -440,10 +440,8 @@ if 'helpers':
                     elif op == 'R':
                         plr.turn_right()
 
-                # 前进并更新结果，若终局则返回结果
+                # 前进并更新结果
                 res = plr.forward()
-                if res:
-                    return res
 
                 # 拷贝场景
                 f, b = field_copy()
@@ -458,6 +456,10 @@ if 'helpers':
                 frame = get_params(f, b)
                 FRAME_FUNC(frame)  # 帧处理函数接口
                 LOG_PUBLIC.append(frame)
+
+                # 若终局则返回结果
+                if res:
+                    return res
 
         # 回合数耗尽
         return (None, -3)
@@ -508,10 +510,6 @@ def match(players,
 
     # 运行比赛，并记录终局场景
     match_result = parse_match(players)
-    if match_result[1] >= 0:
-        frame = get_params(*field_copy())
-        FRAME_FUNC(frame)
-        LOG_PUBLIC.append(frame)
 
     # 如果平手则统计得分
     if match_result[0] is None:
