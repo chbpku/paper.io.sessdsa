@@ -180,12 +180,13 @@ if 'classes':
             # tk
             loading_frame = Frame(root)
             loading_frame.pack(padx=5, pady=[5, 0], fill=X)
-            Label(loading_frame, text='AI: ').pack(side=LEFT)
+            Label(loading_frame, text=name + ': ').pack(side=LEFT)
             self.AI_info = StringVar(value='无')
             Label(loading_frame, textvariable=self.AI_info).pack(side=LEFT)
             self.button = Button(
                 loading_frame, text='读取', command=self.load_ai)
             self.button.pack(side=RIGHT)
+            OP_WIDGETS.append(self.button)
 
             # variables
             self.name = name
@@ -280,6 +281,7 @@ if 'classes':
                 self.cv.config(
                     width=PADDING_WIDTH * 2 + size[0] * self.grid,
                     height=PADDING_WIDTH * 2 + size[1] * self.grid)
+                self.cv.delete('all')
                 self.cv.create_rectangle(
                     (0, 0, int(self.cv['width']) - 1,
                      int(self.cv['height']) - 1),
@@ -303,6 +305,7 @@ if 'classes':
                     'fields':
                     [[None] * self.size[1] for i in range(self.size[0])]
                 }
+                self.last_frame=None
 
             # 清空屏幕
             self._clear()
@@ -470,7 +473,6 @@ if 'widgets':
     ai.AI_info.set('默认AI (循环画正方形)')
     ai.AI_MODULE = null_AI
     ai.AI_NAME = '默认AI'
-    OP_WIDGETS.append(ai.button)
 
     # 比赛设置
     if 'match setting':
