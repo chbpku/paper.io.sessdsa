@@ -22,7 +22,7 @@
 - paper_io_20180522.pdf：说明文档
 - AI_Template.py：AI编写模板（配套说明pdf文件）
 - [AI]：一些示例AI
-* solo.py：自定义比赛与记录回放工具
+* visualize.py：自定义比赛与记录回放工具
 * glory_of_mankind.py：人机对战工具
 - [_outdated]：过时的代码
 
