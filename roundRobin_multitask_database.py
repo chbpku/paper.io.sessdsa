@@ -72,7 +72,7 @@ if __name__ == "__main__":
     '''
 
     # 导入必要库
-    from multiprocessing import Process, Queue
+    from multiprocessing import Process, Queue, cpu_count
     from sqlite3 import connect
     from time import perf_counter as pf
     from random import shuffle, randrange
@@ -84,7 +84,7 @@ if __name__ == "__main__":
         # 常量参数
         MATCH_PARAMS = (51, 101, 2000, 30)  # k, h, turn, time
         ROUNDS = 10  # 比赛局数（单向）
-        MAX_TASKS = 10  # 最大子进程数
+        MAX_TASKS = cpu_count() - 2  # 最大子进程数
         TIMEOUT = (MATCH_PARAMS[3] * 2 + 5) * ROUNDS * 2  # 超时限制
         try:
             MAX_PROMOTION = int(sys.argv[2])  # 晋级人数
@@ -116,14 +116,17 @@ if __name__ == "__main__":
         dataq = Queue()
 
         # 数据库初始化
-        db = connect('%s.db' % TEAM)
         try:  # 清空已有数据
-            db.execute("drop table match_result")
+            os.remove('%s.db' % TEAM)
         except:
             pass
+        db = connect('%s.db' % TEAM)
+        db.execute(
+            "CREATE TABLE `match_raw` ( `plr1` TEXT, `plr2` TEXT, `winner` INTEGER, `type` INTEGER )"
+        )  # 原始结果
         db.execute(
             "CREATE TABLE `match_result` ( `plr1` TEXT, `plr2` TEXT, `flag` TEXT, `win1` INTEGER, `win2` INTEGER, `tie` INTEGER, PRIMARY KEY(`plr1`,`plr2`) )"
-        )  # 建表
+        )  # 比赛总结
         db.commit()
 
         # 当前任务池
@@ -179,6 +182,11 @@ if __name__ == "__main__":
                 if names not in rounds_stat:
                     rounds_stat[names] = {0: 0, 1: 0, None: 0}
                 rounds_stat[names][result[0]] += 1
+                # 加入数据库
+                db.execute(
+                    'INSERT INTO match_raw (plr1,plr2,winner,type) VALUES ("%s","%s",%d,%d)'
+                    % (*names, -1
+                       if result[0] is None else result[0], result[1]))
 
         def update_pair(names, flag):
             '''
@@ -231,10 +239,11 @@ if __name__ == "__main__":
                     os.system('cls')
                 else:
                     os.system('clear')
+            buffer = ''
 
             # 绘制表格，统计得分
             scores = []
-            print('Status:', file=file)
+            buffer += 'Status:\n'
             for plr in players:
                 score = 0
                 line = plr.rjust(max_name_len) + ': |'
@@ -256,20 +265,23 @@ if __name__ == "__main__":
                         else:
                             line += '     '
                     line += '|'
-                line += '  %d' % score
-                print(line, file=file)
+                line += '  %d\n' % score
+                buffer += line
                 scores.append((plr, score))
 
             # 得分排序
-            print('\n\nRanking:', file=file)
+            buffer += '\n\nRanking:\n'
             scores.sort(key=lambda x: -x[1])
             for i in range(len(scores)):
                 if i == MAX_PROMOTION:
                     print('-' * 40, file=file)
                 plr = scores[i]
                 line = plr[0].rjust(max_name_len) + ' |'
-                line += '##' * plr[1] + ' %d' % plr[1]
-                print(line, file=file)
+                line += '##' * plr[1] + ' %d\n' % plr[1]
+                buffer += line
+
+            # 输出至文件流
+            print(buffer, file=file)
 
     # 主事件循环
     visualize_timer = pf()
@@ -301,6 +313,7 @@ if __name__ == "__main__":
                 target=process_task,
                 args=(dataq, AI_PATH, names, LOG_FORMAT, ROUNDS, MATCH_PARAMS))
             process.start()
+            rounds_stat[names] = {0: 0, 1: 0, None: 0}
             running_tasks.append((names, process, now))
 
         # 3. 可视化
