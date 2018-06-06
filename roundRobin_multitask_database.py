@@ -175,19 +175,10 @@ if __name__ == "__main__":
             清空队列内容并进行统计
             '''
             while not dataq.empty():
-                update_stat(*dataq.get())
-
-        def update_stat(names, result):
-            '''
-            更新单次比赛结果
-
-            params:
-                names - 双方名称（字典关键字）
-                result - 比赛结果元组
-            '''
-            if names not in rounds_stat:
-                rounds_stat[names] = {0: 0, 1: 0, None: 0}
-            rounds_stat[names][result[0]] += 1
+                names, result = dataq.get()
+                if names not in rounds_stat:
+                    rounds_stat[names] = {0: 0, 1: 0, None: 0}
+                rounds_stat[names][result[0]] += 1
 
         def update_pair(names, flag):
             '''
