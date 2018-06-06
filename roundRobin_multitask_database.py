@@ -80,11 +80,12 @@ if __name__ == "__main__":
 
     # 初始化环境
     if 'init':
+        t_start = pf()
         # 常量参数
         MATCH_PARAMS = (51, 101, 2000, 30)  # k, h, turn, time
         ROUNDS = 10  # 比赛局数（单向）
-        MAX_TASKS = 12  # 最大子进程数
-        TIMEOUT = 65 * ROUNDS  # 超时限制
+        MAX_TASKS = 10  # 最大子进程数
+        TIMEOUT = (MATCH_PARAMS[3] * 2 + 5) * ROUNDS * 2  # 超时限制
         try:
             MAX_PROMOTION = int(sys.argv[2])  # 晋级人数
         except:
@@ -322,8 +323,10 @@ if __name__ == "__main__":
     visualize()
 
     # 写入结果
+    t_end = pf()
     with open('%s/RESULT.txt' % TEAM, 'w') as result:
         visualize(result)
+        print('running time: %d seconds' % (t_end - t_start), file=result)
 
     # 打包比赛记录
     for plr in players:

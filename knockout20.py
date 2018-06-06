@@ -9,7 +9,6 @@ from match_interface import match, save_match_log, clear_storage, swap_storage
 from operator import itemgetter, attrgetter
 
 import match_core
-
 '''
 # 屏蔽AI自带print
 class null_stream:
@@ -23,7 +22,6 @@ class null_stream:
         pass
 sys.stdout = null_stream
 '''
-
 
 # 设置比赛参数
 GAMES = 10  # 两两作为先后手各比赛场数，总场次为2*GAMES*n(n-1)
@@ -49,7 +47,6 @@ for file in os.listdir(FOLDER):
         except Exception as e:
             print('读取%r时出错：%s' % (file, e), file=sys.__stdout__)
 
-
 # 创建赛程
 schedule = []
 for i in range(len(players) - 1):
@@ -57,40 +54,40 @@ for i in range(len(players) - 1):
         schedule.append(players[i] + players[j])
 [name1, func1, name2, func2] = schedule[0]
 
-
 # 根据赛程比赛
 # 图形化计分表，比赛结果统计表
 x = PrettyTable([' #', 'Endgame Winner', 'Endgame Reason', '   Rmk   '])
 gameResult = [0, 0]
 
-
 # 初始化存储空间
-clear_storage()
-for i in range(2):
-    try:
-        exec('func%d.init(match_core.STORAGE[0])' % i)
-    except:
-        pass
+storageAB, storageBA = [{}, {}], [{}, {}]
+for match_core.STORAGE in storageAB, storageBA:
+    for i in range(2):
+        try:
+            exec('func%d.init(match_core.STORAGE[0])' % i)
+        except:
+            pass
 
 for i in range(GAMES):
+    # A vs B 顺序存储空间
+    match_core.STORAGE = storageAB
+
     match_result = match((func1, func2), (name1, name2), HALFWIDTH, HEIGHT,
                          ROUNDSPERGAME, TIMELIMIT)
     log_name = '%s/log/%s-VS-%s(%s).zlog' % (FOLDER, name1, name2, 1 + i)
     save_match_log(match_result, log_name)
 
-    
     os.system('cls')
-    
+
     gameWinner = match_result['result'][0]
     if gameWinner == 0:
         gameResult[0] += 1
-        winner = '(A) '+name1
+        winner = '(A) ' + name1
     elif gameWinner == 1:
         gameResult[1] += 1
-        winner = '(B) '+name2
+        winner = '(B) ' + name2
     else:
         winner = 'None'
-
     '''
     终局原因 : 
          0 - WAL 撞墙
@@ -110,35 +107,42 @@ for i in range(GAMES):
     reason = 'KO'
     if flag == 3 or flag == 5:
         reason = str(match_result['result'][-1])
-    
-    x.add_row(['%2s'%str(i+i+1), winner, reason, rmklst[flag]
-               +', %4s'%str(len(match_result['log'])-1)])
-    print(name1, ' '*(18-len(name1)), str(gameResult[0]), ': ',
-          str(gameResult[1]), ' '*(18-len(name2)), name2, file=sys.__stdout__)
-    print(x, file=sys.__stdout__)
 
+    x.add_row([
+        '%2s' % str(i + i + 1), winner, reason,
+        rmklst[flag] + ', %4s' % str(len(match_result['log']) - 1)
+    ])
+    print(
+        name1,
+        ' ' * (18 - len(name1)),
+        str(gameResult[0]),
+        ': ',
+        str(gameResult[1]),
+        ' ' * (18 - len(name2)),
+        name2,
+        file=sys.__stdout__)
+    print(x, file=sys.__stdout__)
 
     if gameResult[0] > 10 or gameResult[1] > 10:
         break
 
-    swap_storage()  # 交换
-    
+    # B vs A 顺序存储空间
+    match_core.STORAGE = storageBA
 
     match_result = match((func2, func1), (name2, name1), HALFWIDTH, HEIGHT,
                          ROUNDSPERGAME, TIMELIMIT)
     log_name = '%s/log/%s-VS-%s(%s).zlog' % (FOLDER, name2, name1, 1 + i)
     save_match_log(match_result, log_name)
 
-    
     os.system('cls')
-    
+
     gameWinner = match_result['result'][0]
     if gameWinner == 1:
         gameResult[0] += 1
-        winner = '(B) '+name1
+        winner = '(B) ' + name1
     elif gameWinner == 0:
         gameResult[1] += 1
-        winner = '(A) '+name2
+        winner = '(A) ' + name2
     else:
         winner = 'None'
 
@@ -149,27 +153,34 @@ for i in range(GAMES):
     reason = 'KO'
     if flag == 3 or flag == 5:
         reason = str(match_result['result'][-1])
-    
-    x.add_row(['%2s'%str(i+i+2), winner, reason, rmklst[flag]
-               +', %4s'%str(len(match_result['log'])-1)])
-    print(name1, ' '*(18-len(name1)), str(gameResult[0]), ': ',
-          str(gameResult[1]), ' '*(18-len(name2)), name2, file=sys.__stdout__)
-    print(x, file=sys.__stdout__)
 
+    x.add_row([
+        '%2s' % str(i + i + 2), winner, reason,
+        rmklst[flag] + ', %4s' % str(len(match_result['log']) - 1)
+    ])
+    print(
+        name1,
+        ' ' * (18 - len(name1)),
+        str(gameResult[0]),
+        ': ',
+        str(gameResult[1]),
+        ' ' * (18 - len(name2)),
+        name2,
+        file=sys.__stdout__)
+    print(x, file=sys.__stdout__)
 
     if gameResult[0] > 10 or gameResult[1] > 10:
         break
 
     swap_storage()  # 交换
-    
 
 # 总结函数
-for i in range(2):
-    try:
-        exec('func%d.summaryall(match_core.STORAGE[0])' % i)
-    except:
-        pass
-
+for match_core.STORAGE in storageAB, storageBA:
+    for i in range(2):
+        try:
+            exec('func%d.summaryall(match_core.STORAGE[0])' % i)
+        except:
+            pass
 
 # 单挑结束
 if gameResult[0] > gameResult[1]:
@@ -180,8 +191,13 @@ else:
     totalresult = 'Ties.'
 os.system('cls')
 print('Knockout Result:', totalresult, file=sys.__stdout__)
-print(name1, str(gameResult[0]), ':',
-     str(gameResult[1]), name2, file=sys.__stdout__)
+print(
+    name1,
+    str(gameResult[0]),
+    ':',
+    str(gameResult[1]),
+    name2,
+    file=sys.__stdout__)
 x.add_row([' ', 'Knockout', 'Ended Here', ' '])
 print(x, file=sys.__stdout__)
 time.sleep(100)
