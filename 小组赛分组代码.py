@@ -110,10 +110,10 @@ for team in 'fn':
 
 '''
 F17分组：
-第1组：['f17-777-刘一鸣', 'f17-Charlie-张昀昊', 'f17-Delta-蔡家骥', 'f17-Golf-何为', 'f17-Mike-王禹菲', 'f17-Tango-杨一龙', 'f17-Whiskey-柯赵轲']
+第1组：['f17-Charlie-张昀昊', 'f17-Delta-蔡家骥', 'f17-Golf-何为', 'f17-Kilo-姜金廷', 'f17-Mike-王禹菲', 'f17-Tango-杨一龙', 'f17-Whiskey-柯赵轲']
 第2组：['f17-Echo-莫文韬', 'f17-Hotel-肖力哲', 'f17-Lima-周正清', 'f17-Papa-陈丹丘', 'f17-Romeo-项洋', 'f17-Uniform-余圣杰', 'f17-X-Ray-宣泽远']
-第3组：['f17-Alpha-周子楠', 'f17-Bravo-李想', 'f17-India-黄荣', 'f17-Juliet-刘煜杭', 'f17-November-陈逸凡', 'f17-Quebec-汪昀鸿']
-第4组：['f17-Foxtrot-张懿卓', 'f17-Kilo-姜金廷', 'f17-Oscar-黄赞佑', 'f17-Victor-伍峻琦', 'f17-Yankee-陈羲', 'f17-Zulu-夏一飞']
+第3组：['f17-007-刘一鸣', 'f17-Alpha-周子楠', 'f17-Bravo-李想', 'f17-India-黄荣', 'f17-Juliet-刘煜杭', 'f17-Quebec-汪昀鸿']
+第4组：['f17-Foxtrot-张懿卓', 'f17-November-陈逸凡', 'f17-Oscar-黄赞佑', 'f17-Victor-伍峻琦', 'f17-Yankee-陈羲', 'f17-Zulu-夏一飞']
 N17分组：
 第1组：['n17-Charlie-苏文霖', 'n17-Lima-周忠鹏', 'n17-Oscar-丁力', 'n17-Uniform-席子涵', 'n17-Victor-王馨', 'n17-Zulu-周竞宇']
 第2组：['n17-Alpha-王子瑜', 'n17-Bravo-张瀚垚', 'n17-Echo-向飞燕', 'n17-Golf-姜峰', 'n17-India-张楚珩', 'n17-Kilo-欧阳萌凇']
