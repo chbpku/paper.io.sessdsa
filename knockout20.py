@@ -1,11 +1,9 @@
 __doc__ = '''单挑赛脚本：读取目录内两个文件，提取play函数并执行'''
 
 
-import os, sys, time, platform
+import os, sys, time, platform, match_core
 from prettytable import PrettyTable
 from match_interface import match, save_match_log, clear_storage, swap_storage
-
-import match_core
 
 
 # 屏蔽AI自带print
@@ -24,45 +22,40 @@ sys.stdout = null_stream
 
 
 # 设置比赛参数
-GAMES = 10  # 两两作为先后手各比赛场数，总场次为2*GAMES*n(n-1)
-HALFWIDTH = 51
-HEIGHT = 101
-ROUNDSPERGAME = 2000
-TIMELIMIT = 30
-CLEAR = 'cls' if platform.system() == 'Windows' else 'clear'    # 根据系统设置清屏指令
+GAMES = 10    # 作为先后手各比赛场数，总场次 2 * GAMES
+HALFWIDTH, HEIGHT, TIMELIMIT, ROUNDSPERGAME,  = 51, 101, 30, 2000
+CLEAR = 'cls' if platform.system() == 'Windows' else 'clear'    # 设置清屏指令
 FOLDER = 'AI'
-players = []
+plrs = []
 
 
-#读取AI文件夹下所有算法
-sys.path.append(os.path.abspath(FOLDER))  # 将AI文件夹加入环境路径
+# 读取AI文件夹下所有算法
+sys.path.append(os.path.abspath(FOLDER))    # 将AI文件夹加入环境路径
 for file in os.listdir(FOLDER):
-    if file.endswith('.py') and len(players) < 2:
+    if file.endswith('.py') and len(plrs) < 2:
         # 提取play函数
         try:
             name = file[:-3]
             ai = __import__(name)
             ai.play
-            players.append((name, ai))
+            plrs.append((name, ai))
 
         # 读取时出错
         except Exception as e:
             print('读取%r时出错：%s' % (file, e), file=sys.__stdout__)
 
+
 # 创建赛程
-assert len(players) == 2
-name1, func1 = players[0][0], players[0][1]
-name2, func2 = players[1][0], players[1][1]
+name1, func1, name2, func2 = plrs[0][0], plrs[0][1], plrs[1][0], plrs[1][1]
 
 
-# 根据赛程比赛
 # 图形化计分表，比赛结果统计表
 x = PrettyTable([' #', 'Endgame Winner', 'Game State', '   Rmk   '])
 pairResult = [0, 0]
 
 
 # 图形化计分表与比赛结果统计表绘图工具
-def outputer(match_result, index, GAMES, pairResult, name1, name2, x):
+def outputer(match_result, i, GAMES, pairResult, name1, name2, x):
     os.system(CLEAR)
 
     # 统计胜方
@@ -70,7 +63,7 @@ def outputer(match_result, index, GAMES, pairResult, name1, name2, x):
     gameWinner = gameResult[0]
     if gameWinner == None:
         winner = 'None'
-    elif index < GAMES:    # 前 GAMES 局
+    elif i < GAMES:    # 前 GAMES 局
         if gameWinner == 0:
             pairResult[0] += 1
             winner = '(A) ' + name1
@@ -93,10 +86,9 @@ def outputer(match_result, index, GAMES, pairResult, name1, name2, x):
     if flag == 3 or flag == 5:
         reason = str(gameResult[2])
 
-    x.add_row([
-        '%2d' % index, winner, reason,
-        rmklst[flag] + ', %4s' % str(len(match_result['log']) - 1)
-    ])
+    gameRounds = len(match_result['log']) - 1
+    x.add_row(['%2d'%i, winner, reason, rmklst[flag] + ', %4d'%gameRounds])
+    
     print(
         name1,
         ' ' * (17 - len(name1)),
@@ -120,18 +112,19 @@ for match_core.STORAGE in storageAB, storageBA:
 storageBA = storageBA[::-1]
 
 
-for index in range(GAMES):    # A vs B 顺序存储空间，先赛GAMES局
+# 根据赛程比赛
+for i in range(GAMES):    # A vs B 顺序存储空间，先赛GAMES局
     match_core.STORAGE = storageAB
 
     match_result = match((func1, func2), (name1, name2), HALFWIDTH, HEIGHT,
                          ROUNDSPERGAME, TIMELIMIT)
-    log_name = '%s/log/%s-VS-%s(%s).zlog' % (FOLDER, name1, name2, 1 + index)
+    log_name = '%s/log/%s-VS-%s(%s).zlog' % (FOLDER, name1, name2, 1 + i)
     save_match_log(match_result, log_name)
 
-    outputer(match_result, index, GAMES, pairResult, name1, name2, x)
+    outputer(match_result, i, GAMES, pairResult, name1, name2, x)
 
 
-for index in range(GAMES, GAMES*2):    # B vs A 顺序存储空间，再赛GAMES局    
+for i in range(GAMES, GAMES*2):    # B vs A 顺序存储空间，再赛GAMES局    
     match_core.STORAGE = storageBA
 
     match_result = match((func2, func1), (name2, name1), HALFWIDTH, HEIGHT,
@@ -139,7 +132,7 @@ for index in range(GAMES, GAMES*2):    # B vs A 顺序存储空间，再赛GAMES
     log_name = '%s/log/%s-VS-%s(%s).zlog' % (FOLDER, name2, name1, 1 + i)
     save_match_log(match_result, log_name)
 
-    outputer(match_result, index, GAMES, pairResult, name1, name2, x)
+    outputer(match_result, i, GAMES, pairResult, name1, name2, x)
 
     if pairResult[0] > 10 or pairResult[1] > 10:
         break
@@ -163,3 +156,4 @@ elif pairResult[0] < pairResult[1]:
 else:
     totalresult = 'Ties.'
 print('Knockout Result:', totalresult, file=sys.__stdout__)
+time.sleep(10)
