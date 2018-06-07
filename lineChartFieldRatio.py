@@ -13,7 +13,8 @@ __doc__ = '''
 '''
 
 
-log_path = askopenfilename(filetypes=[('全部文件', '*.*')])
+log_path = askopenfilename(filetypes=[
+    ('对战记录文件', '*.zlog'), ('全部文件', '*.*')])
 with open(log_path, 'rb') as file:
     log = pickle.loads(zlib.decompress(file.read()))
 
