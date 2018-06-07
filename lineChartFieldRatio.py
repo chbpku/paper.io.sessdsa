@@ -24,11 +24,10 @@ playerA, playerB = log['players']
 
 areaC = []
 x = range(len(log['log']))
-for index in x:
+for indexLog in log['log']:
     curAreaA, curAreaB = 0, 0
-    indexLog = log['log'][index]['fields']
-    for rowNum in range(len(indexLog)):
-        for value in indexLog[rowNum]:
+    for row in indexLog['fields']:
+        for value in row:
             if value == 1:
                 curAreaA += 1
             if value == 2:
