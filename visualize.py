@@ -3,7 +3,7 @@ from tkinter.filedialog import askopenfilename, asksaveasfilename
 from tkinter.messagebox import showerror
 from time import perf_counter as pf
 from colorsys import hsv_to_rgb
-import os, sys, pickle, zlib, traceback
+import os, sys, pickle, zlib, traceback, gc
 
 import match_core
 
@@ -22,6 +22,7 @@ MATCH_LOG = None
 MATCH_RUNNING = False
 OP_WIDGETS = []
 DISPLAY_MATCHING = IntVar(value=0)
+MATCH_COUNT = IntVar(value=0)
 
 # 自定义类
 if 'classes':
@@ -62,6 +63,7 @@ if 'classes':
                 self.AI_MODULE = load
                 self.AI_NAME = name
                 self.AI_info.set(name)
+                clear_storage()
             except Exception as e:
                 showerror('%s: %s' % (self.name, type(e).__name__), str(e))
 
@@ -125,7 +127,10 @@ if 'classes':
             # 信息栏
             self.info = StringVar(value='选择双方AI文件后点击“SOLO”按钮开始比赛')
             Label(
-                left_panel, textvariable=self.info, justify=LEFT).pack(
+                left_panel,
+                textvariable=self.info,
+                justify=LEFT,
+                wraplength=240).pack(
                     anchor=W, padx=5)
 
         def button1_press(self):
@@ -198,6 +203,7 @@ if 'classes':
         def load_match_result(self, log, init=True):
             '''读取比赛记录'''
             self.match_result = log['result']
+            gc.collect()
 
             # 初始化场景、时间轴
             if init:
@@ -285,6 +291,7 @@ if 'classes':
             if names == self.names:
                 return
 
+            tk.title('%s vs %s' % names)
             self.names = names
             self.cv.delete('players')
 
@@ -472,39 +479,39 @@ if 'display funcs':
             字符串
         '''
         rtype = result[1]
+        names = ('先手玩家' + names[0], '后手玩家' + names[1])
         f, s = names if result[0] else names[::-1]  # 失败+成功顺序玩家名称
 
         if rtype == 0:
-            return '由于玩家%s撞墙，\n玩家%s获得胜利' % (f, s)
+            return '由于%s撞墙\n%s获得胜利' % (f, s)
 
         if rtype == 1:
             if result[0] != result[2]:
-                return '由于玩家%s撞纸带自杀，\n玩家%s获得胜利' % (f, s)
+                return '由于%s撞纸带自杀\n%s获得胜利' % (f, s)
             else:
-                return '玩家%s撞击对手纸带，获得胜利\n' % s
+                return '%s撞击对手纸带，获得胜利' % s
 
         if rtype == 2:
-            return '玩家%s侧面撞击对手，获得胜利\n' % s
+            return '%s侧面撞击对手，获得胜利' % s
 
         if rtype == 4:
             if result[2]:
-                return '玩家%s在领地内撞击对手\n获得胜利\n' % s
-            return '玩家%s在领地内被对手撞击\n获得胜利\n' % s
+                return '%s在领地内撞击对手，获得胜利' % s
+            return '%s在领地内被对手撞击，获得胜利' % s
 
         if rtype == -1:
             try:
-                print(match.DEBUG_TRACEBACK)
+                print(match_core.match.DEBUG_TRACEBACK)
             except:
                 pass
-            return '由于玩家%s函数报错\n(%s: %s)\n玩家%s获得胜利' % (
-                f, type(result[2]).__name__, result[2], s)
-
+            return '由于%s函数报错\n(%s: %s)\n%s获得胜利' % (f, type(result[2]).__name__,
+                                                   result[2], s)
         if rtype == -2:
-            return '由于玩家%s决策时间耗尽，\n玩家%s获得胜利' % (f, s)
+            return '由于%s决策时间耗尽，\n%s获得胜利' % (f, s)
 
-        pre = '玩家正碰' if rtype == 3 else '回合数耗尽'
+        pre = '双方正碰' if rtype == 3 else '回合数耗尽'
         scores = (('%s: %d' % pair) for pair in zip(names, result[2]))
-        res = '平局' if result[0] is None else ('玩家%s获胜' % s)
+        res = '平局' if result[0] is None else ('%s获胜' % s)
         return '%s，双方得分分别为：\n%s\n%s' % (pre, '\n'.join(scores), res)
 
     def gen_color_text(h, s, v):
@@ -531,6 +538,16 @@ if 'race funcs':
         # 玩家
         name1, func1 = plr1.AI_NAME, plr1.AI_MODULE
         name2, func2 = plr2.AI_NAME, plr2.AI_MODULE
+
+        # 更新比赛场次
+        match_index = MATCH_COUNT.get()
+        if not match_index:
+            for i in 0, 1:
+                try:
+                    exec('func%d.init(match_core.STORAGE[%d])' % (i + 1, i))
+                except:
+                    pass
+        MATCH_COUNT.set(match_index + 1)
 
         # 停用控件
         widget_off()
@@ -613,6 +630,12 @@ if 'IO':
             showerror(type(e).__name__, str(e))
         widget_on()
 
+    # 清空存储区
+    def clear_storage():
+        match_core.STORAGE = [{}, {}]
+        MATCH_COUNT.set(0)
+        gc.collect()
+
 
 # 合成窗口
 if 'widget':
@@ -626,7 +649,12 @@ if 'widget':
 
     # 双方函数存储控制
     storage_frame = Frame(tk_left)
-    storage_frame.pack(padx=5, )
+    storage_frame.pack(padx=5, fill=X)
+    b = Button(storage_frame, text='清空存储区', command=clear_storage)
+    b.pack(side=LEFT, fill=Y, pady=[5, 0], padx=5)
+    OP_WIDGETS.append(b)
+    Label(storage_frame, text='已进行比赛场数：').pack(side=LEFT)
+    Label(storage_frame, textvariable=MATCH_COUNT).pack(side=LEFT)
 
     # 运行比赛控制
     solo_frame = Frame(tk_left)

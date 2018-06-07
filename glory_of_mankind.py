@@ -4,7 +4,7 @@ from tkinter.messagebox import showerror
 from time import perf_counter as pf, sleep
 from colorsys import hsv_to_rgb
 from threading import Thread
-import os, sys, pickle, zlib
+import os, sys, pickle, zlib, gc
 
 import match_core
 
@@ -21,6 +21,7 @@ tk.geometry('+%d+0' % (tk.winfo_screenwidth() / 2 - 300))
 tk.resizable(0, 0)
 tk_left = Frame(tk)
 tk_left.pack(side=LEFT, fill=Y)
+MATCH_COUNT = IntVar(value=0)
 
 # 玩家、默认AI模块
 if 'players':
@@ -67,6 +68,8 @@ if 'race funcs':
     match_core.timer = null_timer
 
     def run_match():
+        gc.collect()
+
         # 读取参数
         k = width_set.get()
         h = height_set.get()
@@ -77,6 +80,15 @@ if 'race funcs':
         else:
             names = (ai.AI_NAME, '人类')
             func1, func2 = ai.AI_MODULE, human_control
+
+        # 更新比赛场次
+        match_index = MATCH_COUNT.get()
+        if not match_index:
+            try:
+                ai.AI_MODULE.init(match_core.STORAGE[player_first.get()])
+            except:
+                pass
+        MATCH_COUNT.set(match_index + 1)
 
         # 初始化显示环境
         display._setup_grid((k * 2, h))
@@ -210,6 +222,7 @@ if 'classes':
                 self.AI_MODULE = load
                 self.AI_NAME = name
                 self.AI_info.set(name)
+                clear_storage()
             except Exception as e:
                 showerror('%s: %s' % (self.name, type(e).__name__), str(e))
 
@@ -305,7 +318,7 @@ if 'classes':
                     'fields':
                     [[None] * self.size[1] for i in range(self.size[0])]
                 }
-                self.last_frame=None
+                self.last_frame = None
 
             # 清空屏幕
             self._clear()
@@ -463,6 +476,12 @@ if 'IO':
             showerror('%s: %s' % (self.name, type(e).__name__), str(e))
         widget_on()
 
+    # 清空存储区
+    def clear_storage():
+        match_core.STORAGE = [{}, {}]
+        MATCH_COUNT.set(0)
+        gc.collect()
+
 
 # 合成窗口
 if 'widgets':
@@ -473,6 +492,15 @@ if 'widgets':
     ai.AI_info.set('默认AI (循环画正方形)')
     ai.AI_MODULE = null_AI
     ai.AI_NAME = '默认AI'
+
+    # 函数存储控制
+    storage_frame = Frame(tk_left)
+    storage_frame.pack(padx=5, fill=X)
+    b = Button(storage_frame, text='清空存储区', command=clear_storage)
+    b.pack(side=LEFT, fill=Y, pady=[5, 0], padx=5)
+    OP_WIDGETS.append(b)
+    Label(storage_frame, text='已进行比赛场数：').pack(side=LEFT)
+    Label(storage_frame, textvariable=MATCH_COUNT).pack(side=LEFT)
 
     # 比赛设置
     if 'match setting':
