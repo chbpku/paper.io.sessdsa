@@ -39,11 +39,10 @@ for indexLog in log['log']:
 # 开始在 tk 绘图
 f, ax = plt.subplots(1)
 ax.set_ylim(ymin=0, ymax=1)
+plt.plot(range(len(log['log'])), y, label = '%s/(%s+%s)'%(plrA, plrA, plrB))
 
 
 # 补齐坐标设置
-plt.plot(range(len(log['log'])), y, label = '%s/(%s+%s)'%(plrA, plrA, plrB))
-plt.ylim(0, 1)
 plt.xlabel('rounds')
 plt.ylabel('Field Ratio')
 plt.title('Field Ratio: ' + log_path.split("/")[-1])
