@@ -44,7 +44,7 @@ if 'players':
 
     class human_control:
         op = None
-        delay = 0.3
+        delay = 0.03
 
         def play(stat, storage):
             sleep(human_control.delay)
