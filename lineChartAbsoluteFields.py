@@ -54,7 +54,7 @@ plt.legend()
 
 
 # 把绘制的图形显示到 tk 窗口上
-root.title('Field Ratio: ' + log_path.split("/")[-1])
+root.title('Absolute Fields: ' + log_path.split("/")[-1])
 canvas =FigureCanvasTkAgg(f, master=root)
 canvas.draw()
 canvas.get_tk_widget().pack(side=Tk.TOP, fill=Tk.BOTH, expand=1)
