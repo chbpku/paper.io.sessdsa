@@ -5,7 +5,7 @@
 
 import os, sys, time, platform
 from prettytable import PrettyTable
-from match_interface import match, save_match_log, clear_storage, swap_storage
+from match_interface import match, save_match_log
 
 import match_core
 
@@ -172,8 +172,6 @@ for i in range(GAMES):
 
     if gameResult[0] > 10 or gameResult[1] > 10:
         break
-
-    swap_storage()  # 交换
 
 # 总结函数
 storageBA = storageBA[::-1]
