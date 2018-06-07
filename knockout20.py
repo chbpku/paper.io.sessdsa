@@ -1,13 +1,7 @@
-﻿__doc__ = '''循环赛脚本
-
-读取同级目录内所有AI文件，提取play函数并执行
-'''
-
-import os, sys, time, platform
+__doc__ = '''单挑赛脚本：读取目录内两个文件，提取play函数并执行'''
+import os, sys, time, platform, match_core
 from prettytable import PrettyTable
-from match_interface import match, save_match_log
-
-import match_core
+from match_interface import match, save_match_log, clear_storage, swap_storage
 
 
 # 屏蔽AI自带print
@@ -24,15 +18,17 @@ class null_stream:
 
 sys.stdout = null_stream
 
+
 # 设置比赛参数
 GAMES = 10  # 两两作为先后手各比赛场数，总场次为2*GAMES*n(n-1)
 HALFWIDTH = 51
 HEIGHT = 101
 ROUNDSPERGAME = 2000
 TIMELIMIT = 30
-CLEAR = 'cls' if platform.system == 'Windows' else 'clear'  # 根据系统设置清屏指令
+CLEAR = 'cls' if platform.system() == 'Windows' else 'clear'    # 根据系统设置清屏指令
 FOLDER = 'AI'
 players = []
+
 
 #读取AI文件夹下所有算法
 sys.path.append(os.path.abspath(FOLDER))  # 将AI文件夹加入环境路径
@@ -51,13 +47,44 @@ for file in os.listdir(FOLDER):
 
 # 创建赛程
 assert len(players) == 2
-name1, func1 = players[0]
-name2, func2 = players[-1]
+name1, func1 = players[0][0], players[0][1]
+name2, func2 = players[1][0], players[1][1]
+
 
 # 根据赛程比赛
 # 图形化计分表，比赛结果统计表
-x = PrettyTable([' #', 'Endgame Winner', 'Endgame Reason', '   Rmk   '])
+x = PrettyTable([' #', 'Endgame Winner', 'Game State', '   Rmk   '])
 gameResult = [0, 0]
+
+
+# 图形化计分表绘图工具
+def game_board_outputer(match_result, index, winner,
+                        gameResult, name1, name2, x):
+    os.system(CLEAR)
+    
+    flag = match_result['result'][1]
+    if flag < 0:
+        flag += 8
+    rmklst = ['WAL', 'TAP', 'SID', 'FAC', 'CIT', 'END', 'OVT', 'ERR']
+    reason = 'KO'
+    if flag == 3 or flag == 5:
+        reason = str(match_result['result'][-1])
+
+    x.add_row([
+        '%2s' % str(index+1), winner, reason,
+        rmklst[flag] + ', %4s' % str(len(match_result['log']) - 1)
+    ])
+    print(
+        name1,
+        ' ' * (18 - len(name1)),
+        str(gameResult[0]),
+        ': ',
+        str(gameResult[1]),
+        ' ' * (20 - len(name2)),
+        name2,
+        file=sys.__stdout__)
+    print(x, file=sys.__stdout__)
+    
 
 # 初始化存储空间
 storageAB, storageBA = [{}, {}], [{}, {}]
@@ -69,16 +96,15 @@ for match_core.STORAGE in storageAB, storageBA:
             pass
 storageBA = storageBA[::-1]
 
-for i in range(GAMES):
-    # A vs B 顺序存储空间
+
+for index in range(GAMES):
+    # A vs B 顺序存储空间，先赛GAMES局
     match_core.STORAGE = storageAB
 
     match_result = match((func1, func2), (name1, name2), HALFWIDTH, HEIGHT,
                          ROUNDSPERGAME, TIMELIMIT)
-    log_name = '%s/log/%s-VS-%s(%s).zlog' % (FOLDER, name1, name2, 1 + i)
+    log_name = '%s/log/%s-VS-%s(%s).zlog' % (FOLDER, name1, name2, 1 + index)
     save_match_log(match_result, log_name)
-
-    os.system(CLEAR)
 
     gameWinner = match_result['result'][0]
     if gameWinner == 0:
@@ -101,41 +127,18 @@ for i in range(GAMES):
         -1 - ERR AI函数报错
     '''
 
-    flag = match_result['result'][1]
-    if flag < 0:
-        flag += 8
-    rmklst = ['WAL', 'TAP', 'SID', 'FAC', 'CIT', 'END', 'OVT', 'ERR']
-    reason = 'KO'
-    if flag == 3 or flag == 5:
-        reason = str(match_result['result'][-1])
+    game_board_outputer(match_result, index, winner,
+                        gameResult, name1, name2, x)
 
-    x.add_row([
-        '%2s' % str(i + i + 1), winner, reason,
-        rmklst[flag] + ', %4s' % str(len(match_result['log']) - 1)
-    ])
-    print(
-        name1,
-        ' ' * (18 - len(name1)),
-        str(gameResult[0]),
-        ': ',
-        str(gameResult[1]),
-        ' ' * (18 - len(name2)),
-        name2,
-        file=sys.__stdout__)
-    print(x, file=sys.__stdout__)
 
-    if gameResult[0] > 10 or gameResult[1] > 10:
-        break
-
-    # B vs A 顺序存储空间
+for index in range(GAMES):
+    # B vs A 顺序存储空间，再赛GAMES局
     match_core.STORAGE = storageBA
 
     match_result = match((func2, func1), (name2, name1), HALFWIDTH, HEIGHT,
                          ROUNDSPERGAME, TIMELIMIT)
     log_name = '%s/log/%s-VS-%s(%s).zlog' % (FOLDER, name2, name1, 1 + i)
     save_match_log(match_result, log_name)
-
-    os.system(CLEAR)
 
     gameWinner = match_result['result'][0]
     if gameWinner == 1:
@@ -147,31 +150,14 @@ for i in range(GAMES):
     else:
         winner = 'None'
 
-    flag = match_result['result'][1]
-    if flag < 0:
-        flag += 8
-    rmklst = ['WAL', 'TAP', 'SID', 'FAC', 'CIT', 'END', 'OVT', 'ERR']
-    reason = 'KO'
-    if flag == 3 or flag == 5:
-        reason = str(match_result['result'][-1])
 
-    x.add_row([
-        '%2s' % str(i + i + 2), winner, reason,
-        rmklst[flag] + ', %4s' % str(len(match_result['log']) - 1)
-    ])
-    print(
-        name1,
-        ' ' * (18 - len(name1)),
-        str(gameResult[0]),
-        ': ',
-        str(gameResult[1]),
-        ' ' * (18 - len(name2)),
-        name2,
-        file=sys.__stdout__)
-    print(x, file=sys.__stdout__)
+    game_board_outputer(match_result, index+10, winner,
+                        gameResult, name1, name2, x)
+
 
     if gameResult[0] > 10 or gameResult[1] > 10:
         break
+    
 
 # 总结函数
 storageBA = storageBA[::-1]
@@ -182,22 +168,12 @@ for match_core.STORAGE in storageAB, storageBA:
         except:
             pass
 
-# 单挑结束
+
+# 单挑结束，输出结果
 if gameResult[0] > gameResult[1]:
     totalresult = name1 + ' wins.'
 elif gameResult[0] < gameResult[1]:
     totalresult = name2 + ' wins.'
 else:
     totalresult = 'Ties.'
-os.system(CLEAR)
 print('Knockout Result:', totalresult, file=sys.__stdout__)
-print(
-    name1,
-    str(gameResult[0]),
-    ':',
-    str(gameResult[1]),
-    name2,
-    file=sys.__stdout__)
-x.add_row([' ', 'Knockout', 'Ended Here', ' '])
-print(x, file=sys.__stdout__)
-time.sleep(100)
