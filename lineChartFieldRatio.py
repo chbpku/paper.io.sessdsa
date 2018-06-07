@@ -6,7 +6,8 @@ import matplotlib.pyplot as plt
 
 __doc__ = '''
 本文档可读取zlog文件并给出折线图，
-图像显示（第一个玩家占地大小）与（两个玩家总占地大小）的比值，
+图像显示（第一个玩家占地大小）
+与（两个玩家总占地大小）的比值，
 其中折线图横轴为回合编号，纵轴为上述比值；
 读入zlog后请手动关闭多余的tk窗口。
 '''
@@ -37,10 +38,12 @@ for index in x:
 
 
 y = areaC
-plt.plot(x, y, label=playerA+'/('+playerA+'+'+playerB+")")
+plt.plot(x, y, label = 
+         playerA + '/(' + playerA + '+' + playerB + ")")
 plt.ylim(0, 1)
 plt.xlabel('rounds') 
 plt.ylabel('Field Ratio') 
-plt.title('Field Ratio: ' + log_path.split("/")[-1]) 
+plt.title('Field Ratio: ' + 
+          log_path.split("/")[-1]) 
 plt.legend() 
 plt.show()
