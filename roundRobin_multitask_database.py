@@ -274,7 +274,7 @@ if __name__ == "__main__":
             scores.sort(key=lambda x: -x[1])
             for i in range(len(scores)):
                 if i == MAX_PROMOTION:
-                    print('-' * 40, file=file)
+                    buffer += '-' * 40 + '\n'
                 plr = scores[i]
                 line = plr[0].rjust(max_name_len) + ' |'
                 line += '##' * plr[1] + ' %d\n' % plr[1]
