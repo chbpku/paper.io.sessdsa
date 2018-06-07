@@ -19,9 +19,7 @@ with open(log_path, 'rb') as file:
     log = pickle.loads(zlib.decompress(file.read()))
 
 
-lstA = log_path.split("-")
-playerA = lstA[0].split('/')[-1]
-playerB = lstA[-1].split("(")[0]
+playerA, playerB = log['players']
 
 
 areaC = []
@@ -39,12 +37,12 @@ for index in x:
 
 
 y = areaC
-plt.plot(x, y, label = 
+plt.plot(x, y, label =
          playerA + '/(' + playerA + '+' + playerB + ")")
 plt.ylim(0, 1)
-plt.xlabel('rounds') 
-plt.ylabel('Field Ratio') 
-plt.title('Field Ratio: ' + 
-          log_path.split("/")[-1]) 
-plt.legend() 
+plt.xlabel('rounds')
+plt.ylabel('Field Ratio')
+plt.title('Field Ratio: ' +
+          log_path.split("/")[-1])
+plt.legend()
 plt.show()

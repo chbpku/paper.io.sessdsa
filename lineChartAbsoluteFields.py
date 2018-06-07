@@ -18,9 +18,7 @@ with open(log_path, 'rb') as file:
     log = pickle.loads(zlib.decompress(file.read()))
 
 
-lstA = log_path.split("-")
-playerA = lstA[0].split('/')[-1]
-playerB = lstA[-1].split("(")[0]
+playerA, playerB = log['players']
 
 
 areaA, areaB = [], []
@@ -39,11 +37,11 @@ for index in x:
 
 
 y1 = areaA
-y2 = areaB 
-plt.plot(x, y1, label = playerA) 
-plt.plot(x, y2, label = playerB) 
-plt.xlabel('rounds') 
-plt.ylabel('Absolute Fields') 
-plt.title('Absolute Fields: ' + log_path.split("/")[-1]) 
-plt.legend() 
+y2 = areaB
+plt.plot(x, y1, label = playerA)
+plt.plot(x, y2, label = playerB)
+plt.xlabel('rounds')
+plt.ylabel('Absolute Fields')
+plt.title('Absolute Fields: ' + log_path.split("/")[-1])
+plt.legend()
 plt.show()
