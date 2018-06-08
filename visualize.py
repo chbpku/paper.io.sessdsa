@@ -11,7 +11,7 @@ import match_core
 MAX_W, MAX_H = 800, 600  # 最大宽高
 MARGIN_WIDTH = 5  # 画布外留白
 PADDING_WIDTH = 5  # 画布边框到场地距离
-FRAME_STEP = 0.1  # 帧间隔
+FRAME_STEP = 10  # 帧间隔
 
 # 定义窗口
 tk = Tk()
@@ -152,6 +152,7 @@ if 'classes':
             else:
                 self.button1['text'] = '暂停'
                 self.playing_status = 1
+                self.update()
 
         def scroll_option(self, *args):
             if MATCH_RUNNING or len(self.frame_seq) < 2:
@@ -188,17 +189,17 @@ if 'classes':
             '''实时更新显示，实现逐帧播放效果'''
             if self.playing_status <= 0:
                 return
-            curr_time = pf()
-            if curr_time - self.old_timer >= FRAME_STEP:
-                self.old_timer = curr_time
-                self.frame_index += 1
-                self._update_screen(self.frame_seq[self.frame_index])
-                self.scroll_update()
+            self.frame_index += 1
+            self._update_screen(self.frame_seq[self.frame_index])
+            self.scroll_update()
 
-                # 一次循环播放结束
-                if self.frame_index == len(self.frame_seq) - 1:
-                    self.playing_status = 0
-                    self.button1['text'] = '重置'
+            # 一次循环播放结束
+            if self.frame_index == len(self.frame_seq) - 1:
+                self.playing_status = 0
+                self.button1['text'] = '重置'
+
+            # 加入下次更新事件
+            tk.after(FRAME_STEP, self.update)
 
         def load_match_result(self, log, init=True):
             '''读取比赛记录'''
@@ -213,7 +214,6 @@ if 'classes':
             self.frame_index = 0
             self.playing_status = 0
             self.button1['text'] = '播放'
-            self.old_timer = pf()
 
             # 在包含不同画面时启用播放按钮
             if len(self.frame_seq) > 1:
@@ -312,6 +312,7 @@ if 'classes':
                     width=self.grid * 0.5,
                     tag='players') for i in (0, 1)
             ]
+            self.band_active = [False] * 2
 
             # 生成玩家
             self.players = [
@@ -366,18 +367,20 @@ if 'classes':
                 sx += self.grid / 2
                 sy += self.grid / 2
                 band_route = [sx, sy]
-                for step in cur_frame['band_route'][i][::-1]:
-                    if step % 2:
-                        sy += (-1 + 2 * (step == 3)) * self.grid
-                    else:
-                        sx += (-1 + 2 * (step == 2)) * self.grid
-                    band_route.append(sx)
-                    band_route.append(sy)
-                if len(band_route) > 2:
+                if cur_frame['band_route'][i]:
+                    self.band_active[i] = True
+                    for step in reversed(cur_frame['band_route'][i]):
+                        if step % 2:
+                            sy += (-1 + 2 * (step == 3)) * self.grid
+                        else:
+                            sx += (-1 + 2 * (step == 2)) * self.grid
+                        band_route.append(sx)
+                        band_route.append(sy)
                     band_route[-1] = (band_route[-1] + band_route[-3]) / 2
                     band_route[-2] = (band_route[-2] + band_route[-4]) / 2
                     self.cv.coords(self.bands[i], band_route)
-                else:
+                elif self.band_active[i]:
+                    self.band_active[i] = False
                     self.cv.coords(self.bands[i], -1, -1, -1, -1)
 
             # 更新屏幕信息
@@ -696,6 +699,4 @@ if 'widget':
     tk.bind_class('Entry', '<Double-1>', focus_select_all)
 
 # 运行窗口
-while 1:
-    display.update()
-    tk.update()
+tk.mainloop()
