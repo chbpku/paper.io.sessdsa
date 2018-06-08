@@ -29,6 +29,12 @@
 ## 修改历史
 _注：以下成分缺少语句主语均为“技术组”_
 
+### 20180608
+- lineChartAbsoluteFields.py ：读入 zlog 可绘制各回合的双方领地绝对数值
+- lineChartDisBands.py ：读入 zlog 可绘制各回合的双方纸卷与对方纸带距离
+- lineChartDisScrolls.py ：读入 zlog 可绘制各回合的双方纸卷距离
+- lineChartFieldRatio.py ：读入 zlog 可绘制各回合的双方领地相对大小
+
 ### 20180606
 - 创建小组赛分组抽选代码
 
