@@ -23,6 +23,7 @@ MATCH_RUNNING = False
 OP_WIDGETS = []
 DISPLAY_MATCHING = IntVar(value=0)
 MATCH_COUNT = IntVar(value=0)
+WIN_COUNT = [0, 0]
 
 # 自定义类
 if 'classes':
@@ -60,6 +61,7 @@ if 'classes':
                     with open(path, encoding='utf-8', errors='ignore') as f:
                         exec(f.read())
 
+                load.play
                 self.AI_MODULE = load
                 self.AI_NAME = name
                 self.AI_info.set(name)
@@ -290,8 +292,6 @@ if 'classes':
             '''根据玩家名生成颜色主题'''
             if names == self.names:
                 return
-
-            tk.title('%s vs %s' % names)
             self.names = names
             self.cv.delete('players')
 
@@ -579,6 +579,10 @@ if 'race funcs':
         # 比赛记录
         global MATCH_LOG
         MATCH_LOG = match_result
+        res = match_result['result'][0]
+        if res is not None:
+            WIN_COUNT[res] += 1
+        tk.title('%s vs %s (%d : %d)' % (*names, *WIN_COUNT))
 
         # 启用控件
         widget_on()
@@ -609,6 +613,7 @@ if 'IO':
                 log = pickle.loads(zlib.decompress(file.read()))
             global MATCH_LOG
             MATCH_LOG = log
+            tk.title('Log: %s' % os.path.basename(log_path))
             display.load_match_result(log)
         except Exception as e:
             showerror('%s: %s' % (os.path.split(log_path)[1],
@@ -637,6 +642,10 @@ if 'IO':
     def clear_storage():
         match_core.STORAGE = [{}, {}]
         MATCH_COUNT.set(0)
+        global WIN_COUNT
+        WIN_COUNT = [0, 0]
+        tk.title('%s vs %s (%d : %d)' % (plr1.AI_NAME, plr2.AI_NAME,
+                                         *WIN_COUNT))
         gc.collect()
 
 

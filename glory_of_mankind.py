@@ -219,6 +219,7 @@ if 'classes':
                     with open(path, encoding='utf-8', errors='ignore') as f:
                         exec(f.read())
 
+                load.play
                 self.AI_MODULE = load
                 self.AI_NAME = name
                 self.AI_info.set(name)
