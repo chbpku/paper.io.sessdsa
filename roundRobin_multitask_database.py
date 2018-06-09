@@ -74,7 +74,7 @@ if __name__ == "__main__":
     # 导入必要库
     from multiprocessing import Process, Queue, cpu_count
     from sqlite3 import connect
-    from time import perf_counter as pf
+    from time import perf_counter as pf, sleep
     from random import shuffle, randrange
     from platform import system
 
@@ -233,12 +233,6 @@ if __name__ == "__main__":
             params:
                 file - 输出流
             '''
-            # 清屏
-            if file == sys.__stdout__:
-                if system() == 'Windows':
-                    os.system('cls')
-                else:
-                    os.system('clear')
             buffer = ''
 
             # 绘制表格，统计得分
@@ -281,6 +275,12 @@ if __name__ == "__main__":
                 buffer += line
 
             # 输出至文件流
+            # 清屏
+            if file == sys.__stdout__:
+                if system() == 'Windows':
+                    os.system('cls')
+                else:
+                    os.system('clear')
             print(buffer, file=file)
 
     # 主事件循环
@@ -307,7 +307,7 @@ if __name__ == "__main__":
         running_tasks = [i for i in running_tasks if i]
 
         # 2. 加入新任务
-        if tasks_buffer and len(running_tasks) < MAX_TASKS:
+        while tasks_buffer and len(running_tasks) < MAX_TASKS:
             names = tasks_buffer.pop()
             process = Process(
                 target=process_task,
@@ -317,9 +317,8 @@ if __name__ == "__main__":
             running_tasks.append((names, process, now))
 
         # 3. 可视化
-        if now - visualize_timer > 0.5:
-            visualize()
-            visualize_timer = now
+        visualize()
+        sleep(0.5)
 
         # 4. 若运行完毕则跳出
         if not running_tasks:
