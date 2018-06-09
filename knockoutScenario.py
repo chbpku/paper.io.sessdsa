@@ -19,7 +19,7 @@ def knockoutScenario(plrs, FOLDER):
     
     # 设置比赛参数
     GAMES = 10    # 作为先后手各比赛场数，总场次 2 * GAMES
-    HALFWIDTH, HEIGHT, TIMELIMIT, ROUNDSPERGAME = 51, 101, 30, 20
+    HALFWIDTH, HEIGHT, TIMELIMIT, ROUNDSPERGAME = 51, 101, 30, 2000
     CLEAR = 'cls' if platform.system() == 'Windows' else 'clear'    # 设置清屏指令
 
     # 创建赛程
