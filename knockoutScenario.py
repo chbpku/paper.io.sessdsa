@@ -3,8 +3,8 @@ from prettytable import PrettyTable
 from match_interface import match, save_match_log, clear_storage, swap_storage
 
 
-def knockoutScenario(plrs, FOLDER):    # 单挑赛脚本：读取目录内两个文件，提取play函数并执行
-
+# 单挑赛脚本：读取目录内两个文件，提取play函数并执行
+def knockoutScenario(plrs, FOLDER):
     # 屏蔽AI自带print
     class null_stream:
         def read(*args):
@@ -17,21 +17,18 @@ def knockoutScenario(plrs, FOLDER):    # 单挑赛脚本：读取目录内两个
             pass
     sys.stdout = null_stream
     
-
     # 设置比赛参数
     GAMES = 10    # 作为先后手各比赛场数，总场次 2 * GAMES
-    HALFWIDTH, HEIGHT, TIMELIMIT, ROUNDSPERGAME = 51, 101, 30, 2000
+    HALFWIDTH, HEIGHT, TIMELIMIT, ROUNDSPERGAME = 51, 101, 30, 20
     CLEAR = 'cls' if platform.system() == 'Windows' else 'clear'    # 设置清屏指令
-
 
     # 创建赛程
     name1, func1, name2, func2 = plrs[0][0], plrs[0][1], plrs[1][0], plrs[1][1]
 
-
     # 图形化计分表，比赛结果统计表
-    x = PrettyTable(['  # ', ' Endgame Winner ', ' Game State ', '    Rmk    '])
+    x = PrettyTable(['  # ', ' Endgame Winner ',
+                     ' Game State ', '    Rmk    '])
     pairResult = [0, 0]
-
 
     # 图形化计分表与比赛结果统计表绘图工具
     def outputer(match_result, i, GAMES, pairResult, name1, name2, x):
@@ -79,20 +76,19 @@ def knockoutScenario(plrs, FOLDER):    # 单挑赛脚本：读取目录内两个
             file=sys.__stdout__)
         print(x, file=sys.__stdout__)
         
-
     # 初始化存储空间
     storageAB, storageBA = [{}, {}], [{}, {}]
     for match_core.STORAGE in storageAB, storageBA:
         for i in range(2):
             try:
-                exec('func%d.init(match_core.STORAGE[%d])' % (i + 1, i))
+                exec('func%d.init(match_core.STORAGE[%d])' % (i+1, i))
             except:
                 pass
     storageBA = storageBA[::-1]
 
-
     # 根据赛程比赛
-    for i in range(GAMES):    # A vs B 顺序存储空间，先赛GAMES局
+    # A vs B 顺序存储空间，先赛GAMES局
+    for i in range(GAMES):
         match_core.STORAGE = storageAB
 
         match_result = match((func1, func2), (name1, name2), 
@@ -101,43 +97,41 @@ def knockoutScenario(plrs, FOLDER):    # 单挑赛脚本：读取目录内两个
         save_match_log(match_result, log_name)
 
         outputer(match_result, i+1, GAMES, pairResult, name1, name2, x)
-
-
-    for i in range(GAMES, GAMES*2):    # B vs A 顺序存储空间，再赛GAMES局    
+    
+    # B vs A 顺序存储空间，再赛GAMES局  
+    for i in range(GAMES, GAMES*2):  
         match_core.STORAGE = storageBA
 
         match_result = match((func2, func1), (name2, name1), 
                              HALFWIDTH, HEIGHT, ROUNDSPERGAME, TIMELIMIT)
-        log_name = '%s/log/%s-VS-%s(%s).zlog' % (FOLDER, name2, name1, i - GAMES)
+        log_name = '%s/log/%s-VS-%s(%s).zlog' % (FOLDER, name2, name1, i-GAMES)
         save_match_log(match_result, log_name)
 
         outputer(match_result, i+1, GAMES, pairResult, name1, name2, x)
 
         if abs(pairResult[0]-pairResult[1]) >= 2*GAMES-i:
             break
-        
 
     # 总结函数
     storageBA = storageBA[::-1]
     for match_core.STORAGE in storageAB, storageBA:
         for i in range(2):
             try:
-                exec('func%d.summaryall(match_core.STORAGE[%d])' % (i + 1, i))
+                exec('func%d.summaryall(match_core.STORAGE[%d])' % (i+1, i))
             except:
                 pass
-
-
+            
     # 单挑结束，输出结果
     if pairResult[0] > pairResult[1]:
-        totalresult = name1 + ' wins.'
+        totalwinner = name1
         output = [(name1, func1)], [(name2, func2)]
     elif pairResult[0] < pairResult[1]:
-        totalresult = name2 + ' wins.'
+        totalwinner = name2
         output = [(name2, func2)], [(name1, func1)]
     else:
-        totalresult = 'Ties.'
+        totalwinner = 'No one'
         output = [['No one']], None
-    print('Knockout Result:', totalresult,
+    print('Knockout Result:', totalwinner, 'wins.',
           '\nPress enter to continue:',file=sys.__stdout__)
     input()
     return output
