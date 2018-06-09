@@ -448,10 +448,10 @@ if 'IO':
             w['state'] = DISABLED
 
     # 绑定玩家输入
-    key_mapping = {39: 0, 68: 0, 40: 1, 83: 1, 37: 2, 65: 2, 38: 3, 87: 3}
+    key_mapping = {'d': 0, 'Right': 0, 's': 1, 'Down': 1, 'a': 2, 'Left': 2, 'w': 3, 'Up': 3}
 
     def key_control(e):
-        key = e.keycode
+        key = e.keysym
         if key in key_mapping:
             human_control.op = key_mapping[key]
 
