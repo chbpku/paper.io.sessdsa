@@ -132,6 +132,6 @@ def knockoutScenario(plrs, FOLDER):
         totalwinner = 'No one'
         output = [['No one']], None
     print('Knockout Result:', totalwinner, 'wins.',
-          '\nPress enter to continue:',file=sys.__stdout__)
+          '\nPress enter to continue:', file=sys.__stdout__)
     input()
     return output
