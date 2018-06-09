@@ -138,11 +138,11 @@ if 'display funcs':
         f, s = names if result[0] else names[::-1]  # 失败+成功顺序玩家名称
 
         if rtype == 0:
-            return '由于%s撞墙，%s获得胜利' % (f, s)
+            return '由于%s撞墙\n%s获得胜利' % (f, s)
 
         if rtype == 1:
             if result[0] != result[2]:
-                return '由于%s撞纸带自杀，%s获得胜利' % (f, s)
+                return '由于%s撞纸带自杀\n%s获得胜利' % (f, s)
             else:
                 return '%s撞击对手纸带，获得胜利' % s
 
@@ -159,16 +159,16 @@ if 'display funcs':
                 print(match_core.match.DEBUG_TRACEBACK)
             except:
                 pass
-            return '由于%s函数报错(%s: %s)，%s获得胜利' % (f, type(result[2]).__name__,
-                                                result[2], s)
+            return '由于%s函数报错\n(%s: %s)\n%s获得胜利' % (f, type(result[2]).__name__,
+                                                   result[2], s)
 
         if rtype == -2:
-            return '由于%s决策时间耗尽，%s获得胜利' % (f, s)
+            return '由于%s决策时间耗尽\n%s获得胜利' % (f, s)
 
         pre = '双方正碰' if rtype == 3 else '回合数耗尽'
         scores = (('%s: %d' % pair) for pair in zip(names, result[2]))
         res = '平局' if result[0] is None else ('%s获胜' % s)
-        return '%s，双方得分分别为：%s——%s' % (pre, '; '.join(scores), res)
+        return '%s\n双方得分分别为：\n%s\n%s' % (pre, '\n'.join(scores), res)
 
     def gen_color_text(h, s, v):
         '''
@@ -449,10 +449,23 @@ if 'IO':
             w['state'] = DISABLED
 
     # 绑定玩家输入
-    key_mapping = {39: 0, 68: 0, 40: 1, 83: 1, 37: 2, 65: 2, 38: 3, 87: 3}
+    key_mapping = {
+        'Right': 0,
+        'Donw': 1,
+        'Left': 2,
+        'Up': 3,
+        'D': 0,
+        'S': 1,
+        'A': 2,
+        'W': 3,
+        'd': 0,
+        's': 1,
+        'a': 2,
+        'w': 3
+    }
 
     def key_control(e):
-        key = e.keycode
+        key = e.keysym
         if key in key_mapping:
             human_control.op = key_mapping[key]
 
@@ -545,7 +558,7 @@ if 'widgets':
     # 信息栏
     info = StringVar(value='人類に栄光あれ！')
     Label(
-        tk_left, textvariable=info, justify=LEFT).pack(
+        tk_left, textvariable=info, justify=LEFT, wraplength=240).pack(
             padx=5, pady=5, anchor=W)
 
     # 双击全选功能
