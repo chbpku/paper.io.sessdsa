@@ -1,4 +1,4 @@
-import os, sys, time, platform, match_core
+import os, sys, platform, match_core
 from prettytable import PrettyTable
 from match_interface import match, save_match_log, clear_storage, swap_storage
 from knockoutScenario import knockoutScenario
@@ -26,16 +26,17 @@ for file in os.listdir(FOLDER):
 
 
 # 四分之一决赛
-winnerA, loserA = knockoutScenario(PLRS[0:2], FOLDER)
+winnerA, loserA = knockoutScenario(PLRS[:2], FOLDER)
 winnerB, loserB = knockoutScenario(PLRS[2:4], FOLDER)
 winnerC, loserC = knockoutScenario(PLRS[4:6], FOLDER)
-winnerD, loserD = knockoutScenario(PLRS[6:8], FOLDER)
+winnerD, loserD = knockoutScenario(PLRS[6:], FOLDER)
 
 
 # 结果显示
 os.system(CLEAR)
-print(winnerA[0][0] + ' wins game A.', file=sys.__stdout__)
-print(winnerB[0][0] + ' wins game B.', file=sys.__stdout__)
-print(winnerC[0][0] + ' wins game C.', file=sys.__stdout__)
-print(winnerD[0][0] + ' wins game D.', file=sys.__stdout__)
-time.sleep(5)
+print(winnerA[0][0]+' wins game A.', file=sys.__stdout__)
+print(winnerB[0][0]+' wins game B.', file=sys.__stdout__)
+print(winnerC[0][0]+' wins game C.', file=sys.__stdout__)
+print(winnerD[0][0]+' wins game D.', file=sys.__stdout__)
+print('Press enter to end this program.:', file=sys.__stdout__)
+input()
