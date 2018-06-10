@@ -1,8 +1,12 @@
 import match_core, match_interface
 import os, sys
 
+# 常量参数
+MATCH_PARAMS = (51, 101, 2000, 60)  # k, h, turn, time
+ROUNDS = 10  # 比赛局数（单向）
 
-def process_task(data_queue, path, names, log_format, rounds, match_params):
+
+def process_task(data_queue, path, names, log_format):
     '''
     子进程执行两玩家多局对决
 
@@ -12,8 +16,6 @@ def process_task(data_queue, path, names, log_format, rounds, match_params):
         names - 玩家名称
         log_format - 记录文件名格式
             比赛记录将保存为log_format % (*names, index)路径
-        rounds - 单向比赛局数（双向进行）
-        match_params - 比赛参数
     '''
     # 读取玩家
     sys.path.append(path)
@@ -39,9 +41,9 @@ def process_task(data_queue, path, names, log_format, rounds, match_params):
                 pass
 
         # 运行多局比赛
-        for i in range(rounds):
+        for i in range(ROUNDS):
             # 进行比赛，获取记录
-            match_log = match_core.match(players, names, *match_params)
+            match_log = match_core.match(players, names, *MATCH_PARAMS)
 
             # 生成比赛记录
             log_name = log_format % (*names, i)
@@ -54,7 +56,7 @@ def process_task(data_queue, path, names, log_format, rounds, match_params):
             # 统计比赛结果，若胜利过半则跳出
             if result[0] is not None:
                 win_counts[result[0]] += 1
-                if win_counts[result[0]] > rounds:
+                if win_counts[result[0]] > ROUNDS:
                     break
 
         # 总总结函数
@@ -68,32 +70,30 @@ def process_task(data_queue, path, names, log_format, rounds, match_params):
 if __name__ == "__main__":
     '''
     用法：
-        python3 this.py 分组名 [晋级人数(默认8)]
+        python3 this.py 分组名
     '''
 
     # 导入必要库
     from multiprocessing import Process, Queue, cpu_count
     from sqlite3 import connect
     from time import perf_counter as pf, sleep
-    from random import shuffle, randrange
+    from random import shuffle, randrange, seed
     from platform import system
 
     # 初始化环境
     if 'init':
         t_start = pf()
+
         # 常量参数
-        MATCH_PARAMS = (51, 101, 2000, 30)  # k, h, turn, time
-        ROUNDS = 10  # 比赛局数（单向）
-        MAX_TASKS = cpu_count() - 2  # 最大子进程数
+        MAX_TASKS = 16  # 最大子进程数
         TIMEOUT = (MATCH_PARAMS[3] * 2 + 5) * ROUNDS * 2  # 超时限制
-        try:
-            MAX_PROMOTION = int(sys.argv[2])  # 晋级人数
-        except:
-            MAX_PROMOTION = 8
+        MAX_PROMOTION = 2
 
         # 组别
-        TEAM = sys.argv[1]
-        # TEAM = 'AI'
+        try:
+            TEAM = sys.argv[1]
+        except:
+            TEAM = 'test'
         LOG_FORMAT = TEAM + "/log/%s-%s(%d).zlog"
         AI_PATH = os.path.abspath(TEAM)
 
@@ -138,6 +138,8 @@ if __name__ == "__main__":
 
     # 生成赛制
     if 'get schedule':
+        seed(42)
+
         # 获取玩家，信息保存为同目录txt文件
         players = []
         sys.path.append(AI_PATH)
@@ -234,16 +236,18 @@ if __name__ == "__main__":
                 file - 输出流
             '''
             buffer = ''
-
+            split_line = ' ' + '  ' + '+-----' * len(players) + '+\n'
             # 绘制表格，统计得分
             scores = []
             buffer += 'Status:\n'
+            buffer += split_line
             for plr in players:
+                plr_symbol = plr[6].upper()  # 取首字母显示
                 score = 0
-                line = plr.rjust(max_name_len) + ': |'
+                line = plr_symbol + ': |'
                 for cp in players:
                     if plr == cp:
-                        line += '*****'
+                        line += ' -%s- ' % plr_symbol
                     else:
                         pair = (plr, cp)
                         if pair in results_stat:
@@ -254,14 +258,17 @@ if __name__ == "__main__":
                             elif pair_result == '0':
                                 score += 1
                         elif pair in rounds_stat:
-                            line += '%02d-%02d' % (rounds_stat[pair][0],
-                                                   rounds_stat[pair][1])
+                            cur_scores = str(
+                                rounds_stat[pair][0]).rjust(2) + ':' + str(
+                                    rounds_stat[pair][1]).ljust(2)
+                            line += cur_scores.center(5)
                         else:
                             line += '     '
                     line += '|'
                 line += '  %d\n' % score
                 buffer += line
                 scores.append((plr, score))
+                buffer += split_line
 
             # 得分排序
             buffer += '\n\nRanking:\n'
@@ -270,7 +277,7 @@ if __name__ == "__main__":
                 if i == MAX_PROMOTION:
                     buffer += '-' * 40 + '\n'
                 plr = scores[i]
-                line = plr[0].rjust(max_name_len) + ' |'
+                line = plr[0].ljust(max_name_len) + ' |'  # 取首字母显示
                 line += '##' * plr[1] + ' %d\n' % plr[1]
                 buffer += line
 
@@ -284,7 +291,6 @@ if __name__ == "__main__":
             print(buffer, file=file)
 
     # 主事件循环
-    visualize_timer = pf()
     visualize()
     while 1:
         now = pf()
@@ -310,8 +316,7 @@ if __name__ == "__main__":
         while tasks_buffer and len(running_tasks) < MAX_TASKS:
             names = tasks_buffer.pop()
             process = Process(
-                target=process_task,
-                args=(dataq, AI_PATH, names, LOG_FORMAT, ROUNDS, MATCH_PARAMS))
+                target=process_task, args=(dataq, AI_PATH, names, LOG_FORMAT))
             process.start()
             rounds_stat[names] = {0: 0, 1: 0, None: 0}
             running_tasks.append((names, process, now))
@@ -331,8 +336,8 @@ if __name__ == "__main__":
         visualize(result)
         print('running time: %d seconds' % (t_end - t_start), file=result)
 
-    # 打包比赛记录
-    for plr in players:
-        op = "cd %s/log; tar -czf %s.tgz *%s*" % (TEAM, plr, plr)
-        print('$ ' + op, file=sys.__stdout__)
-        os.system(op)
+    # # 打包比赛记录
+    # for plr in players:
+    #     op = "cd %s/log; tar -czf %s.tgz *%s*" % (TEAM, plr, plr)
+    #     print('$ ' + op, file=sys.__stdout__)
+    #     os.system(op)
