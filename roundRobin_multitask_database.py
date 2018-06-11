@@ -6,6 +6,21 @@ MATCH_PARAMS = (51, 101, 2000, 60)  # k, h, turn, time
 ROUNDS = 10  # 比赛局数（单向）
 
 
+# 屏蔽AI自带print
+class null_stream:
+    def read(*args):
+        pass
+
+    def write(*args):
+        pass
+
+    def flush(*args):
+        pass
+
+
+sys.stdout = null_stream
+
+
 def process_task(data_queue, path, names, log_format):
     '''
     子进程执行两玩家多局对决
@@ -96,19 +111,6 @@ if __name__ == "__main__":
             TEAM = 'test'
         LOG_FORMAT = TEAM + "/log/%s-%s(%d).zlog"
         AI_PATH = os.path.abspath(TEAM)
-
-        # 屏蔽AI自带print
-        class null_stream:
-            def read(*args):
-                pass
-
-            def write(*args):
-                pass
-
-            def flush(*args):
-                pass
-
-        sys.stdout = null_stream
 
     # 数据结构
     if 'IO':
