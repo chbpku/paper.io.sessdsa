@@ -12,7 +12,7 @@ import match_core
 MAX_W, MAX_H = 800, 600  # 最大宽高
 MARGIN_WIDTH = 5  # 画布外留白
 PADDING_WIDTH = 5  # 画布边框到场地距离
-FRAME_STEP = 0.1  # 帧间隔
+FRAME_STEP = 0.05  # 帧间隔
 
 # 定义窗口
 tk = Tk()
@@ -44,7 +44,7 @@ if 'players':
 
     class human_control:
         op = None
-        delay = 0.03
+        delay = 0.2
 
         def play(stat, storage):
             sleep(human_control.delay)
