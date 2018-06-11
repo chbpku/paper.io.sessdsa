@@ -12,7 +12,6 @@ import match_core
 MAX_W, MAX_H = 800, 600  # 最大宽高
 MARGIN_WIDTH = 5  # 画布外留白
 PADDING_WIDTH = 5  # 画布边框到场地距离
-FRAME_STEP = 0.05  # 帧间隔
 
 # 定义窗口
 tk = Tk()
@@ -44,10 +43,23 @@ if 'players':
 
     class human_control:
         op = None
-        delay = 0.2
+        delay = 0.05
+        old_timer = 0
+
+        def load(*args):
+            human_control.old_timer = pf()
 
         def play(stat, storage):
-            sleep(human_control.delay)
+            # 时间控制
+            now = pf()
+            if now - human_control.old_timer < human_control.delay:
+                sleep(human_control.old_timer + human_control.delay - now)
+                human_control.old_timer = pf()
+            else:
+                human_control.old_timer = now
+
+            # 读取并清空按键缓冲
+            res = ''
             if human_control.op is not None:
                 op = (
                     human_control.op - stat['now']['me']['direction'] + 4) % 4
@@ -449,7 +461,16 @@ if 'IO':
             w['state'] = DISABLED
 
     # 绑定玩家输入
-    key_mapping = {'d': 0, 'right': 0, 's': 1, 'down': 1, 'a': 2, 'left': 2, 'w': 3, 'up': 3}
+    key_mapping = {
+        'd': 0,
+        'right': 0,
+        's': 1,
+        'down': 1,
+        'a': 2,
+        'left': 2,
+        'w': 3,
+        'up': 3
+    }
 
     def key_control(e):
         key = e.keysym.lower()
