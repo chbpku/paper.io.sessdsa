@@ -44,7 +44,7 @@ if 'players':
 
     class human_control:
         op = None
-        delay = 0.03
+        delay = 0.2
 
         def play(stat, storage):
             sleep(human_control.delay)
@@ -451,7 +451,7 @@ if 'IO':
     # 绑定玩家输入
     key_mapping = {
         'Right': 0,
-        'Donw': 1,
+        'Down': 1,
         'Left': 2,
         'Up': 3,
         'D': 0,
