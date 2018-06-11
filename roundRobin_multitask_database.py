@@ -63,6 +63,8 @@ def process_task(data_queue, path, names, log_format):
             # 生成比赛记录
             log_name = log_format % (*names, i)
             match_interface.save_match_log(match_log, log_name)
+            match_interface.save_match_log(match_log['log'][-1],
+                                           log_name[:-4]+"pkl")
 
             # 比赛结果传递至队列
             result = match_log['result']
