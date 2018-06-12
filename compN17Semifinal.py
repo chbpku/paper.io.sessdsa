@@ -28,9 +28,9 @@ def quarterfinal(FOLDER):# 读取文件夹内的算法
 
 
 # 半决赛
-FOLDER = os.getcwd()+'\\N17\\E1W2S1N2'
+FOLDER = os.getcwd()+'/N17/E1W2S1N2'
 winnerE, loserE = knockoutScenario(quarterfinal(FOLDER), FOLDER)
-FOLDER = os.getcwd()+'\\N17\\E2W1S2N1'
+FOLDER = os.getcwd()+'/N17/E2W1S2N1'
 winnerF, loserF = knockoutScenario(quarterfinal(FOLDER), FOLDER)
 
 
