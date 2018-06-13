@@ -58,6 +58,7 @@ if 'players':
 
         def play(stat, storage):
             me = stat['now']['me']
+            heading = me['direction']
             # 键盘控制
             if human_control.control == 'key':
                 # 时间控制
@@ -71,7 +72,7 @@ if 'players':
                 # 读取并清空按键缓冲
                 res = ''
                 if human_control.op is not None:
-                    op = (human_control.op - me['direction'] + 4) % 4
+                    op = (human_control.op - heading + 4) % 4
                     res = ' R L' [op]
                     human_control.op = None
                     return res
@@ -81,25 +82,28 @@ if 'players':
                 x, y = me['x'], me['y']
                 tx, ty = human_control.pos
 
-                # 循环等待合法输入
-                while 1:
-                    # 等待输入
-                    while not human_control.mouse_holding or (
-                            x, y) == human_control.pos:
-                        sleep(0.1)
+                # 等待输入
+                while not human_control.mouse_holding or (
+                        x, y) == human_control.pos:
+                    sleep(0.1)
 
-                    # 判断方向
-                    if abs(x - tx) >= abs(y - ty):
-                        tdir = 2 * (tx < x)
-                    else:
-                        tdir = 1 + 2 * (ty < y)
-
-                    # 输出相对方向（非倒退）
-                    op = (tdir - me['direction'] + 4) % 4
-                    if op == 2:
-                        (x, y) = human_control.pos
-                        continue
-                    return ' RxL' [op]
+                # 判断方向
+                if heading == 0:
+                    if tx - x > abs(y - ty) or ty == y:
+                        return
+                    return 'LR' [ty > y]
+                elif heading == 2:
+                    if x - tx > abs(y - ty) or ty == y:
+                        return
+                    return 'LR' [ty < y]
+                elif heading == 1:
+                    if ty - y > abs(x - tx) or tx == x:
+                        return
+                    return 'LR' [tx < x]
+                elif heading == 3:
+                    if y - ty > abs(x - tx) or tx == x:
+                        return
+                    return 'LR' [tx > x]
 
 
 # 调用函数
