@@ -42,30 +42,64 @@ if 'players':
             storage['edges'] = 0
 
     class human_control:
+        control = 'key'
+
+        # 键盘控制
         op = None
-        delay = 0.05
+        delay = 0.1
         old_timer = 0
+
+        # 鼠标控制
+        pos = None
+        mouse_holding = False
 
         def load(*args):
             human_control.old_timer = pf()
 
         def play(stat, storage):
-            # 时间控制
-            now = pf()
-            if now - human_control.old_timer < human_control.delay:
-                sleep(human_control.old_timer + human_control.delay - now)
-                human_control.old_timer = pf()
-            else:
-                human_control.old_timer = now
+            me = stat['now']['me']
+            # 键盘控制
+            if human_control.control == 'key':
+                # 时间控制
+                now = pf()
+                if now - human_control.old_timer < human_control.delay:
+                    sleep(human_control.old_timer + human_control.delay - now)
+                    human_control.old_timer = pf()
+                else:
+                    human_control.old_timer = now
 
-            # 读取并清空按键缓冲
-            res = ''
-            if human_control.op is not None:
-                op = (
-                    human_control.op - stat['now']['me']['direction'] + 4) % 4
-                res = ' R L' [op]
-                human_control.op = None
-                return res
+                # 读取并清空按键缓冲
+                res = ''
+                if human_control.op is not None:
+                    op = (human_control.op - me['direction'] + 4) % 4
+                    res = ' R L' [op]
+                    human_control.op = None
+                    return res
+
+            # 鼠标控制
+            else:
+                x, y = me['x'], me['y']
+                tx, ty = human_control.pos
+
+                # 循环等待合法输入
+                while 1:
+                    # 等待输入
+                    while not human_control.mouse_holding or (
+                            x, y) == human_control.pos:
+                        sleep(0.1)
+
+                    # 判断方向
+                    if abs(x - tx) >= abs(y - ty):
+                        tdir = 2 * (tx < x)
+                    else:
+                        tdir = 1 + 2 * (ty < y)
+
+                    # 输出相对方向（非倒退）
+                    op = (tdir - me['direction'] + 4) % 4
+                    if op == 2:
+                        (x, y) = human_control.pos
+                        continue
+                    return ' RxL' [op]
 
 
 # 调用函数
@@ -473,11 +507,33 @@ if 'IO':
     }
 
     def key_control(e):
+        # 跳过鼠标控制下一帧
+        if human_control.control == 'mouse':
+            human_control.mouse_holding = True
+            plr = match_core.PLAYERS[1 - player_first.get()]
+            human_control.pos = (plr.x + plr.directions[plr.direction][0],
+                                 plr.y + plr.directions[plr.direction][1])
+
+        human_control.control = 'key'
         key = e.keysym.lower()
         if key in key_mapping:
             human_control.op = key_mapping[key]
 
     tk.bind('<KeyPress>', key_control)
+
+    # 鼠标点选位置
+    def mouse_down(e):
+        human_control.mouse_holding = True
+        human_control.control = 'mouse'
+        set_position(e)
+
+    def mouse_up(e):
+        human_control.mouse_holding = False
+
+    def set_position(e):
+        x = int((e.x - PADDING_WIDTH) / display.grid + 0.5)
+        y = int((e.y - PADDING_WIDTH) / display.grid + 0.5)
+        human_control.pos = (x, y)
 
     # 保存比赛记录
     def save_log():
@@ -562,6 +618,9 @@ if 'widgets':
     # 显示窗口
     display = display_frame(tk)
     match_core.FRAME_FUNC = display._update_screen
+    display.cv.bind('<Button-1>', mouse_down)
+    display.cv.bind('<ButtonRelease-1>', mouse_up)
+    display.cv.bind('<B1-Motion>', set_position)
 
     # 信息栏
     info = StringVar(value='人類に栄光あれ！')
