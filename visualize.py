@@ -192,7 +192,7 @@ if 'classes':
                 self.button1['text'] = '重置'
 
             # 加入下次更新事件
-            tk.after(FRAME_STEP, self.update)
+            self.root.after(FRAME_STEP, self.update)
 
         def load_match_result(self, log, init=True):
             '''读取比赛记录'''
