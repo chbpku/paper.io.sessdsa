@@ -86,6 +86,8 @@ if 'players':
                 while not human_control.mouse_holding or (
                         x, y) == human_control.pos:
                     sleep(0.1)
+                    if human_control.control == 'key':  # 中途改用键盘控制
+                        return human_control.play(stat, storage)
 
                 # 判断方向
                 if heading == 0:
@@ -520,16 +522,9 @@ if 'IO':
     }
 
     def key_control(e):
-        # 跳过鼠标控制下一帧
-        if human_control.control == 'mouse':
-            human_control.mouse_holding = True
-            plr = match_core.PLAYERS[1 - player_first.get()]
-            human_control.pos = (plr.x + plr.directions[plr.direction][0],
-                                 plr.y + plr.directions[plr.direction][1])
-
-        human_control.control = 'key'
         key = e.keysym.lower()
         if key in key_mapping:
+            human_control.control = 'key'
             human_control.op = key_mapping[key]
 
     tk.bind('<KeyPress>', key_control)
