@@ -104,7 +104,7 @@ if 'classes':
 
     # 定义复盘显示框
     class display_frame:
-        def __init__(self, root, left_panel):
+        def __init__(self, root):
             self.root = root
             self.panel = Frame(root)
             self.panel.pack(padx=5, pady=5, fill=X)
@@ -125,15 +125,6 @@ if 'classes':
 
             # 显示接口
             self._init_screen()
-
-            # 信息栏
-            self.info = StringVar(value='选择双方AI文件后点击“SOLO”按钮开始比赛')
-            Label(
-                left_panel,
-                textvariable=self.info,
-                justify=LEFT,
-                wraplength=240).pack(
-                    anchor=W, padx=5)
 
         def button1_press(self):
             '''播放按钮函数'''
@@ -401,7 +392,7 @@ if 'classes':
                 header = 'Step %d / %d:\n' % (self.frame_index,
                                               len(self.frame_seq) - 1)
                 text = header + self._update_info(cur_frame, field_count)
-            self.info.set(text)
+            info.set(text)
 
             # 记录已渲染的帧用作参考
             self.last_frame = cur_frame
@@ -698,7 +689,13 @@ if 'widget':
     Label(log_frame, text='直播比赛过程').pack(side=LEFT)
 
     # 显示框
-    display = display_frame(tk, tk_left)
+    display = display_frame(tk)
+
+    # 信息栏
+    info = StringVar(value='选择双方AI文件后点击“SOLO”按钮开始比赛')
+    Label(
+        tk_left, textvariable=info, justify=LEFT, wraplength=240).pack(
+            anchor=W, padx=5)
 
     # 双击全选功能
     def focus_select_all(e):
