@@ -358,20 +358,27 @@ if 'classes':
                 sx += self.grid / 2
                 sy += self.grid / 2
                 band_route = [sx, sy]
-                if cur_frame['band_route'][i]:
-                    self.band_active[i] = True
-                    for step in reversed(cur_frame['band_route'][i]):
-                        if step % 2:
-                            sy += (-1 + 2 * (step == 3)) * self.grid
-                        else:
-                            sx += (-1 + 2 * (step == 2)) * self.grid
-                        band_route.append(sx)
-                        band_route.append(sy)
-                    band_route[-1] = (band_route[-1] + band_route[-3]) / 2
-                    band_route[-2] = (band_route[-2] + band_route[-4]) / 2
+                old_direction = None
+                for step in cur_frame['band_route'][i][::-1]:
+                    if step % 2:
+                        sy += (-1 + 2 * (step == 3)) * self.grid
+                    else:
+                        sx += (-1 + 2 * (step == 2)) * self.grid
+                    if step == old_direction:  # 合并同方向片段
+                        band_route.pop()
+                        band_route.pop()
+                    old_direction = step
+                    band_route.append(sx)
+                    band_route.append(sy)
+                if len(band_route) > 2:
+                    if step % 2:
+                        band_route[-1] -= (-1 + 2 *
+                                           (step == 3)) * self.grid / 2
+                    else:
+                        band_route[-2] -= (-1 + 2 *
+                                           (step == 2)) * self.grid / 2
                     self.cv.coords(self.bands[i], band_route)
-                elif self.band_active[i]:
-                    self.band_active[i] = False
+                else:
                     self.cv.coords(self.bands[i], -1, -1, -1, -1)
 
             # 更新屏幕信息
