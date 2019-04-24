@@ -265,7 +265,7 @@ class player:
 # 辅助函数
 if 'helpers':
 
-    def init_field(k, h, max_turn, max_time):
+    def init_field(k, h, max_turn, max_time, plr_overrides=None):
         '''
         初始化比赛场地
 
@@ -274,6 +274,7 @@ if 'helpers':
             h - 场地高度
             max_turn - 总回合数（双方各行动一次为一回合）
             max_time - 总思考时间（秒）
+            plr_overrides - 用于覆盖设置双方玩家参数
         '''
         # 初始化场地
         global WIDTH, HEIGHT, BANDS, FIELDS
@@ -290,9 +291,13 @@ if 'helpers':
         TIMES = [MAX_TIME] * 2
 
         # 初始化玩家
+        if not plr_overrides:
+            plr_overrides = [{
+                'x': k * i + k // 2 + randrange(-3, 4),
+                'y': h // 2 + randrange(-3, 4),
+            } for i in range(2)]
         for i in range(2):
-            PLAYERS[i] = player(i + 1, k * i + k // 2 + randrange(-3, 4),
-                                h // 2 + randrange(-3, 4))
+            PLAYERS[i] = player(i + 1, **plr_overrides[i])
 
         # 创建初始场景拷贝
         f, b = field_copy()
@@ -485,7 +490,8 @@ def match(players,
           k=51,
           h=101,
           max_turn=2000,
-          max_time=30):
+          max_time=30,
+          plr_overrides=None):
     '''
     一次比赛
     params:
@@ -497,6 +503,7 @@ def match(players,
         h - 场地高（奇数）
         max_turn - 总回合数（双方各行动一次为一回合）
         max_time - 总思考时间（秒）
+        plr_overrides - 用于覆盖设置双方玩家参数
 
     returns:
         字典，包含比赛结果与记录信息:
@@ -506,7 +513,7 @@ def match(players,
             result : 对局结果，详见parse_match函数注释
     '''
     # 初始化比赛环境
-    init_field(k, h, max_turn, max_time)
+    init_field(k, h, max_turn, max_time, plr_overrides)
 
     # 运行比赛，并记录终局场景
     match_result = parse_match(players)
