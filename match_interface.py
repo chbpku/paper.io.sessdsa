@@ -133,10 +133,14 @@ if 'compact log':
         overrides = compact_log['init']
 
         # 复原比赛
-        expand_log= match_core.match(bot_plrs, names, k, h, mturn, mtime, overrides)
-        expand_log['result']=compact_log['result']
-        for frame,tleft in zip(expand_log['log'],zip(*compact_log['timeleft'])):
-            frame['timeleft']=tleft
+        expand_log = match_core.match(bot_plrs, names, k, h, mturn, mtime,
+                                      overrides)
+        expand_log['result'] = compact_log['result']
+        for frame, tleft in zip(expand_log['log'],
+                                zip(*compact_log['timeleft'])):
+            frame['timeleft'] = tleft
+
+        return expand_log
 
 
 if 'samples':

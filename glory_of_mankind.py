@@ -6,7 +6,7 @@ from colorsys import hsv_to_rgb
 from threading import Thread
 import os, sys, pickle, zlib, gc
 
-import match_core
+import match_core, match_interface
 
 # 自定义参数
 MAX_W, MAX_H = 800, 600  # 最大宽高
@@ -546,18 +546,17 @@ if 'IO':
     # 保存比赛记录
     def save_log():
         # 获取路径
-        filename = asksaveasfilename(filetypes=[('比赛记录', '*.zlog')])
+        filename = asksaveasfilename(filetypes=[('比赛记录', '*.clog')])
         if not filename:
             return
 
-        if not filename.endswith('.zlog'):
-            filename += '.zlog'
+        if not filename.endswith('.clog'):
+            filename += '.clog'
 
         # 写入比赛记录
         widget_off()
         try:
-            with open(filename, 'wb') as f:
-                f.write(zlib.compress(pickle.dumps(MATCH_LOG), -1))
+            match_interface.save_compact_log(MATCH_LOG, filename)
         except Exception as e:
             showerror('%s: %s' % (self.name, type(e).__name__), str(e))
         widget_on()

@@ -5,7 +5,7 @@ from time import perf_counter as pf
 from colorsys import hsv_to_rgb
 import os, sys, pickle, zlib, traceback, gc
 
-import match_core
+import match_core, match_interface
 
 # 自定义参数
 MAX_W, MAX_H = 800, 600  # 最大宽高
@@ -603,35 +603,39 @@ if 'IO':
 
     # 读取记录
     def load_log():
-        log_path = askopenfilename(filetypes=[('对战记录文件', '*.zlog'), ('全部文件',
+        log_path = askopenfilename(filetypes=[('对战记录文件', '*.clog;*.zlog'), ('全部文件',
                                                                      '*.*')])
         if not log_path: return
         try:
-            with open(log_path, 'rb') as file:
-                log = pickle.loads(zlib.decompress(file.read()))
+            if log_path.endswith('.zlog'):
+                log = match_interface.load_match_log(log_path)
+            elif log_path.endswith('.clog'):
+                log = match_interface.load_compact_log(log_path)
+            else:
+                raise ValueError('后缀名非法')
             global MATCH_LOG
             MATCH_LOG = log
             tk.title('Log: %s' % os.path.basename(log_path))
             display.load_match_result(log)
         except Exception as e:
+            raise
             showerror('%s: %s' % (os.path.split(log_path)[1],
                                   type(e).__name__), str(e))
 
     # 保存记录
     def save_log():
         # 获取路径
-        filename = asksaveasfilename(filetypes=[('比赛记录', '*.zlog')])
+        filename = asksaveasfilename(filetypes=[('比赛记录', '*.clog')])
         if not filename:
             return
 
-        if not filename.endswith('.zlog'):
-            filename += '.zlog'
+        if not filename.endswith('.clog'):
+            filename += '.clog'
 
         # 写入比赛记录
         widget_off()
         try:
-            with open(filename, 'wb') as f:
-                f.write(zlib.compress(pickle.dumps(MATCH_LOG), -1))
+            match_interface.save_compact_log(MATCH_LOG, filename)
         except Exception as e:
             showerror(type(e).__name__, str(e))
         widget_on()
